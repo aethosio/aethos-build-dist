@@ -1,0 +1,132 @@
+#!/bin/bash
+
+initfs()
+{
+  echo Creating initfs
+  rm -rf /root/initfs 2> /dev/null
+  mkdir -p /root/initfs 2> /dev/null
+  pushd /root/initfs > /dev/null || return 1
+
+  mkdir -p {bin,sbin,sys,dev,proc,etc,lib,mount/cdrom}
+  mknod dev/console c 5 1
+  mknod dev/ram0 b 1 1
+  mknod dev/null c 1 3
+  mknod dev/tty1 c 4 1
+  mknod dev/tty2 c 4 2
+  mknod dev/sda b 8 0
+  mknod dev/sda1 b 8 1
+  mknod dev/sda2 b 8 2
+  mknod dev/sda3 b 8 3
+  mknod dev/sda4 b 8 4
+  mknod dev/sda5 b 8 5
+  mknod dev/sda6 b 8 6
+  mknod dev/sda7 b 8 7
+  mknod dev/sda8 b 8 8
+  mknod dev/sdb b 8 16
+  mknod dev/sdb1 b 8 17
+  mknod dev/sdb2 b 8 18
+  mknod dev/sdb3 b 8 19
+  mknod dev/sdb4 b 8 20
+  mknod dev/sdb5 b 8 21
+  mknod dev/sdb6 b 8 22
+  mknod dev/sdb7 b 8 23
+  mknod dev/sdb8 b 8 24
+  mknod dev/sr0 b 11 0
+  mknod dev/sr1 b 11 1
+
+  # Create symbolic links in bin for BusyBox
+  pushd bin > /dev/null || return 1
+  # If this fails then you need to copy a statically linked
+  # BusyBox to /root/bin/busybox
+  cp /root/bin/busybox . || return 1
+  for b in $(/root/bin/busybox --list); do
+    ln -s busybox ${b}
+  done
+  popd > /dev/null
+
+  # Populate sbin
+  pushd sbin > /dev/null || return 1
+  cp /usr/sbin/grub-install .
+  popd > /dev/null
+  # ln -s bin sbin
+
+  # Create the init script
+  #TODO Eventually this gets replaced with a real init
+  cat <<EOF >> init
+#!/bin/ash
+mount -t proc /proc /proc
+mount -t sysfs none /sys
+mount /dev/sr0 /mount/cdrom
+echo
+echo "initrd is running"
+echo "Using BusyBox..."
+echo
+exec /bin/ash
+EOF
+  chmod a+x init
+
+  # Now create the gzipped initrd.img
+  find . | cpio -o -H newc | gzip > ../CD_root/boot/initrd.img
+
+  popd > /dev/null
+  echo Done!
+}
+
+mkiso()
+{
+  pushd /root > /dev/null || return 1
+  #TODO Externalize this variable
+  export AETHOS_VERSION=0.0.12
+  mkisofs -o aethos-$AETHOS_VERSION-amd64.iso -b isolinux/isolinux.bin \
+    -c isolinux/boot.txt -no-emul-boot -boot-load-size 4 \
+    -boot-info-table CD_root
+  popd > /dev/null
+}
+
+usage()
+{
+  cat <<EOF
+
+$1 command
+
+  Available commands:
+
+  initfs      Creates the initfs in /root/initfs
+  mkiso       Creates the iso of CD_root
+
+  Additional options:
+
+  -h|--help   Displays this help
+
+EOF
+}
+
+# Verify the command was set.
+if [ -z $1 ]; then
+  echo Command must be specified.
+  usage $(basename $0)
+  exit 1
+fi
+
+options=$(getopt -o h -l help -- "$@")
+if [ $? -ne 0 ]; then
+    usage $(basename $0)
+    exit 1
+fi
+
+while true
+do
+  case "$2" in
+    -h|--help)    usage $0 && exit 0;;
+    --)           shift 1; break;;
+    *)            break ;;
+  esac
+done
+
+# Eventually there will be more; initfs is the only thing
+# implemented so far.
+case "$1" in
+  initfs)         initfs; exit 0;;
+  mkiso)          mkiso; exit 0;;
+  *)              echo Bad command && usage $0 && exit 0;;
+esac
