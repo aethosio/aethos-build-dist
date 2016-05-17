@@ -83,6 +83,16 @@ mkiso()
   popd > /dev/null
 }
 
+mkinstall()
+{
+  pushd /root/CD_root/install > /dev/null || return 1
+  cat <<EOF > install.sh
+#!/bin/ash
+wget 
+EOF
+  popd > /dev/null
+}
+
 usage()
 {
   cat <<EOF
@@ -93,6 +103,7 @@ $1 command
 
   initfs      Creates the initfs in /root/initfs
   mkiso       Creates the iso of CD_root
+  mkinstall   Create the installation script
 
   Additional options:
 
@@ -128,5 +139,6 @@ done
 case "$1" in
   initfs)         initfs; exit 0;;
   mkiso)          mkiso; exit 0;;
+  mkinstall)      mkinstall; exit 0;;
   *)              echo Bad command && usage $0 && exit 0;;
 esac
