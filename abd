@@ -88,7 +88,14 @@ mkinstall()
   pushd /root/CD_root/install > /dev/null || return 1
   cat <<EOF > install.sh
 #!/bin/ash
-wget 
+wget https://raw.githubusercontent.com/aethosio/aethos-build-dist/master/install2.sh
+./install2.sh
+chmod a+x install2.sh
+./install2.sh
+EOF
+  cat <<EOF > install2.sh
+#!/bin/ash
+echo Error downloading install2.sh from GitHub.  Are you connected to the Internet?
 EOF
   popd > /dev/null
 }
