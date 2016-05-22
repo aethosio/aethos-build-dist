@@ -42,6 +42,19 @@ initfs()
   for b in $(/root/bin/busybox --list); do
     ln -s busybox ${b}
   done
+
+  # Copy the binaries and their dependencies
+  cp /lib/ld-linux.so.2 ../lib
+  cp /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 ../lib
+  bins=(ld cfdisk ldd bash nano)
+  for f in "${bins[@]}"
+  do
+    file=`which ${f}`
+    echo "${file}"
+    cp ${file} .
+    ldd ${file} | grep "=> /" | awk '{print $3}' | xargs -I '{}' cp -v '{}' ../lib
+  done
+
   popd > /dev/null
 
   # Populate sbin
@@ -67,7 +80,7 @@ EOF
 
   # Now create the gzipped initrd.img
   find . | cpio -o -H newc | gzip > ../CD_root/boot/initrd.img
-
+  cp /root/linux-4.5.3/arch/x86_64/boot/bzImage /root/CD_root/boot/
   popd > /dev/null
   echo Done!
 }
@@ -86,13 +99,83 @@ mkiso()
 mkinstall()
 {
   pushd /root/CD_root/install > /dev/null || return 1
+
+  # Create the bin and lib folder
+  rm -rf bin 2> /dev/null
+  mkdir -p bin 2> /dev/null
+  rm -rf lib 2> /dev/null
+  mkdir -p lib 2> /dev/null
+
+  # Copy the binaries and their dependencies
+  bins=(systemd bash nano grep awk xargs tar cat wget cfdisk fdisk mkfs mkswap mkdir mount swapon ifup ifdown ifconfig)
+  for f in "${bins[@]}"
+  do
+    file=`which ${f}`
+    echo "${file}"
+    cp ${file} bin
+    ldd ${file} | grep "=> /" | awk '{print $3}' | xargs -I '{}' cp -v '{}' lib
+  done
+
+  # Initial install.sh
+  # This sets up networking
   cat <<EOF > install.sh
 #!/bin/ash
+
+# Create the partition and file systems
+#cfdisk
+fdisk -l /dev/sda
+echo "Press ENTER to continue if you created /dev/sda1 (boot) and /dev/sda5 (swap)"
+echo ctrl-c aborts
+read x
+#mkfs -v -t ext4 /dev/sda1
+#mkswap /dev/sda5
+
+# Mount the new partitions
+export AETHOS=/aethos
+mkdir -pv $AETHOS
+mount -v -t ext4 /dev/sda1 $AETHOS
+swapon -v /dev/sda5
+
+cd $AETHOS
+
+echo Making directories
+mkdir -p {bin,sbin,sys,dev,proc,etc,lib}
+
+echo Make devices
+mknod dev/console c 5 1
+mknod dev/ram0 b 1 1
+mknod dev/null c 1 3
+mknod dev/tty1 c 4 1
+mknod dev/tty2 c 4 2
+mknod dev/sda b 8 0
+mknod dev/sda1 b 8 1
+mknod dev/sda2 b 8 2
+mknod dev/sda3 b 8 3
+mknod dev/sda4 b 8 4
+mknod dev/sda5 b 8 5
+mknod dev/sda6 b 8 6
+mknod dev/sda7 b 8 7
+mknod dev/sda8 b 8 8
+mknod dev/sdb b 8 16
+mknod dev/sdb1 b 8 17
+mknod dev/sdb2 b 8 18
+mknod dev/sdb3 b 8 19
+mknod dev/sdb4 b 8 20
+mknod dev/sdb5 b 8 21
+mknod dev/sdb6 b 8 22
+mknod dev/sdb7 b 8 23
+mknod dev/sdb8 b 8 24
+mknod dev/sr0 b 11 0
+mknod dev/sr1 b 11 1
+
+echo -n Networking must be started by now; if not, the following will fail
+read x
 wget https://raw.githubusercontent.com/aethosio/aethos-build-dist/master/install2.sh
 ./install2.sh
 chmod a+x install2.sh
 ./install2.sh
 EOF
+  # Second installation script
   cat <<EOF > install2.sh
 #!/bin/ash
 echo Error downloading install2.sh from GitHub.  Are you connected to the Internet?
@@ -111,7 +194,8 @@ $1 command
   initfs      Creates the initfs in /root/initfs
   mkiso       Creates the iso of CD_root
   mkinstall   Create the installation script
-
+  all         Executes all of the buid steps
+  
   Additional options:
 
   -h|--help   Displays this help
@@ -147,5 +231,6 @@ case "$1" in
   initfs)         initfs; exit 0;;
   mkiso)          mkiso; exit 0;;
   mkinstall)      mkinstall; exit 0;;
+  all)            initfs; mkiso; mkinstall; exit 0;;
   *)              echo Bad command && usage $0 && exit 0;;
 esac
