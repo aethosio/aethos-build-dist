@@ -194,35 +194,38 @@ getBuildRoot()
 build()
 {
     export BR2_EXTERNAL=/root/abd/br2_external
-    export BR2_OUTPUT=/root/buildroot-build
+    export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
     mkdir -p ${BR2_OUTPUT} 2> /dev/null
 
     pushd /root/buildroot > /dev/null || getBuildRoot
 
-    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_x86_64_defconfig
+    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
     make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT}
+
+    if [ "$size" == "full" ]
+    then
+      echo Copying the output file system to the min overlay file sytem
+      mkdir -p /root/rootfs/${arch}/min/install
+      cp ${BR2_OUTPUT}/images/rootfs.tar.gz /root/rootfs/${arch}/min/install
+    fi
 
     popd > /dev/null
 }
 
 config()
 {
-  echo "Architect is ${arch}"
-  echo "Size is ${size}"
-}
-
-testConfig()
-{
-  arch=$1
-  size=$2
-
   export BR2_EXTERNAL=/root/abd/br2_external
   export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
 
   pushd /root/buildroot > /dev/null || getBuildRoot
 
-  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_x86_64_defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} nconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} busybox-menuconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} linux-menuconfig
+  echo Building new defconfig and busybox configs
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} savedefconfig BR2_DEFCONFIG=${BR2_EXTERNAL}/configs/aethos_${arch}_${size}_defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} busybox-update-config
 
   popd > /dev/null
 
