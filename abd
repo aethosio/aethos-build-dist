@@ -183,6 +183,51 @@ EOF
   popd > /dev/null
 }
 
+getBuildRoot()
+{
+  pushd /root > /dev/null || return 1
+  git clone git://git.buildroot.net/buildroot
+  popd > /dev/null
+  cd /root/buildroot || return 1
+}
+
+build()
+{
+    export BR2_EXTERNAL=/root/abd/br2_external
+    export BR2_OUTPUT=/root/buildroot-build
+    mkdir -p ${BR2_OUTPUT} 2> /dev/null
+
+    pushd /root/buildroot > /dev/null || getBuildRoot
+
+    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_x86_64_defconfig
+    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT}
+
+    popd > /dev/null
+}
+
+config()
+{
+  echo "Architect is ${arch}"
+  echo "Size is ${size}"
+}
+
+testConfig()
+{
+  arch=$1
+  size=$2
+
+  export BR2_EXTERNAL=/root/abd/br2_external
+  export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
+
+  pushd /root/buildroot > /dev/null || getBuildRoot
+
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_x86_64_defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} nconfig
+
+  popd > /dev/null
+
+}
+
 usage()
 {
   cat <<EOF
@@ -195,13 +240,26 @@ $1 command
   mkiso       Creates the iso of CD_root
   mkinstall   Create the installation script
   all         Executes all of the buid steps
-  
+
+  Experimental commands:
+
+  build       Executes the buildroot make
+  config
+
   Additional options:
 
   -h|--help   Displays this help
+  -x|--x86_64  Set the architecture to x86_64
+  -r|--rpi     Set the architecture to arm/Raspberry Pi
+  -t|--tk1     Set the architecture to arm/NVidia TK1
+  -f|--full    Set the size to be full
+  -m|--min     Set the size to be min
 
 EOF
 }
+
+arch="x86_64"
+size="full"
 
 # Verify the command was set.
 if [ -z $1 ]; then
@@ -210,16 +268,24 @@ if [ -z $1 ]; then
   exit 1
 fi
 
-options=$(getopt -o h -l help -- "$@")
+options=$(getopt -o hxrtfm -l help x86_64 rpi tk1 full min -- "$@")
 if [ $? -ne 0 ]; then
     usage $(basename $0)
     exit 1
 fi
 
+cmd=$1
+shift 1
+
 while true
 do
-  case "$2" in
-    -h|--help)    usage $0 && exit 0;;
+  case "$1" in
+    -h|--help)    usage $(basename $0) && exit 0;;
+    -x|--x86_64)  shift 1; arch="x86_64";;
+    -r|--rpi)     shift 1; arch="rpi";;
+    -t|--tk1)     shift 1; arch="tk1";;
+    -f|--full)    shift 1; size="full";;
+    -m|--min)     shift 1; size="min";;
     --)           shift 1; break;;
     *)            break ;;
   esac
@@ -227,10 +293,12 @@ done
 
 # Eventually there will be more; initfs is the only thing
 # implemented so far.
-case "$1" in
+case ${cmd} in
   initfs)         initfs; exit 0;;
   mkiso)          mkiso; exit 0;;
   mkinstall)      mkinstall; exit 0;;
   all)            initfs; mkiso; mkinstall; exit 0;;
+  build)          build; exit 0;;
+  config)         config; exit 0;;
   *)              echo Bad command && usage $0 && exit 0;;
 esac
