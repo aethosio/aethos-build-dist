@@ -1,0 +1,23 @@
+comment "golang needs a toolchain w/ threads, dynamic library"
+	depends on BR2_PACKAGE_GOLANG_ARCH_SUPPORTS
+	depends on !BR2_TOOLCHAIN_HAS_THREADS || BR2_STATIC_LIBS
+
+# golang only supports x86, x86_64 and ARM (LE) targets.
+# For ARM, armv5 or above is required.
+config BR2_PACKAGE_GOLANG_ARCH_SUPPORTS
+	bool
+	default y
+	depends on BR2_USE_MMU
+	depends on BR2_i386 || BR2_x86_64 || BR2_arm
+	depends on !BR2_ARM_CPU_ARMV4
+
+config BR2_PACKAGE_GOLANG
+	bool "golang"
+	depends on BR2_PACKAGE_GOLANG_ARCH_SUPPORTS
+	depends on !BR2_STATIC_LIBS
+	depends on BR2_TOOLCHAIN_HAS_THREADS
+	help
+	  Go interpreter and cli tool. Not required for running pre-compiled Go binaries.
+
+	  http://golang.org/
+    

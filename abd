@@ -189,6 +189,7 @@ getBuildRoot()
   git clone git://git.buildroot.net/buildroot
   popd > /dev/null
   cd /root/buildroot || return 1
+  git checkout tags/2016.05-rc2
 }
 
 build()
@@ -212,7 +213,37 @@ build()
     popd > /dev/null
 }
 
+testgo()
+{
+    export BR2_EXTERNAL=/root/abd/br2_external
+    export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
+    mkdir -p ${BR2_OUTPUT} 2> /dev/null
+
+    pushd /root/buildroot > /dev/null || getBuildRoot
+
+    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
+    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} golang
+
+    popd > /dev/null
+}
+
 config()
+{
+  export BR2_EXTERNAL=/root/abd/br2_external
+  export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
+
+  pushd /root/buildroot > /dev/null || getBuildRoot
+
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} nconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} savedefconfig BR2_DEFCONFIG=${BR2_EXTERNAL}/configs/aethos_${arch}_${size}_defconfig
+
+  popd > /dev/null
+
+}
+
+
+configall()
 {
   export BR2_EXTERNAL=/root/abd/br2_external
   export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
@@ -226,6 +257,20 @@ config()
   echo Building new defconfig and busybox configs
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} savedefconfig BR2_DEFCONFIG=${BR2_EXTERNAL}/configs/aethos_${arch}_${size}_defconfig
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} busybox-update-config
+
+  popd > /dev/null
+
+}
+
+clean()
+{
+  export BR2_EXTERNAL=/root/abd/br2_external
+  export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
+
+  pushd /root/buildroot > /dev/null || getBuildRoot
+
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} clean
 
   popd > /dev/null
 
@@ -303,5 +348,7 @@ case ${cmd} in
   all)            initfs; mkiso; mkinstall; exit 0;;
   build)          build; exit 0;;
   config)         config; exit 0;;
+  clean)          clean; exit 0;;
+  testgo)         testgo; exit 0;;
   *)              echo Bad command && usage $0 && exit 0;;
 esac

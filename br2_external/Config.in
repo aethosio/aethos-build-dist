@@ -1,1 +1,4 @@
 
+menu "Interpreter languages and scripting"
+  source "$BR2_EXTERNAL/package/golang/Config.in"
+endmenu
