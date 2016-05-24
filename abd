@@ -189,7 +189,8 @@ getBuildRoot()
   git clone git://git.buildroot.net/buildroot
   popd > /dev/null
   cd /root/buildroot || return 1
-  git checkout tags/2016.05-rc2
+  #git checkout tags/2016.05-rc2
+  git checkout master
 }
 
 build()
