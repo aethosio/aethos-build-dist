@@ -41,6 +41,7 @@ Assuming you have an Ubuntu installation, the following instructions will help y
 Since we use LXC containers within AethOS anyway, it only makes sense to create a container for our build "machine".  This will allow us to install a whole lot of software required for building, then discard it all without messing with our main machine.
 
 ```
+root@ubuntu:~#
 apt install lxc btrfs-tools
 ```
 
@@ -49,10 +50,12 @@ As a precursor, if you haven't already done so, you should (highly recommended, 
 Create the partition; here I'm creating it on `/dev/sdb`, which is another drive altogether.  Hopefully you have a spare partition somewhere, or maybe, like me, you're actually running Ubuntu on a virtual machine, which will make it easier for you to add a new virtual hard drive.
 
 ```
+root@ubuntu:~#
 cfdisk /dev/sdb
 ```
 
 ```
+root@ubuntu:~#
 mkfs.btrfs /dev/sdb1
 mount /dev/sdb1 /var/lib/lxc
 ```
@@ -60,17 +63,20 @@ mount /dev/sdb1 /var/lib/lxc
 We'll create a container with Ubuntu Xenial 64 bit OS installed. The `-n build` names the container "build"; it's important that you use this container name because other scripts will use this (specifically the lxc-aethos LXC template)
 
 ```
+root@ubuntu:~#
 lxc-create -B btrfs -t download -n build -- -d ubuntu -r xenial -a amd64
 ```
 
 Alternatively, if you're doing this on an NVidia TK1, use this command for the appropriate architecture.
 
 ```
+root@ubuntu:~#
 lxc-create -B btrfs -t download -n build -- -d ubuntu -r xenial -a armhf
 ```
 
 You can verify that the brtfs file system was used.
 ```
+root@ubuntu:~#
 btrfs sub list /var/lib/lxc/
 ```
 
@@ -111,6 +117,7 @@ lxc-attach -n build
 
 Update your build container with software required for the rest of this install.
 ```
+root@build:~#
 apt update
 apt upgrade
 apt install make gcc libncurses5-dev libelf-dev bc busybox grub mkisofs
@@ -119,6 +126,7 @@ apt install make gcc libncurses5-dev libelf-dev bc busybox grub mkisofs
 Additional packages:
 
 ```
+root@build:~#
 apt install sed binutils build-essential g++ bash patch gzip bzip2 perl tar cpio python unzip rsync wget cvs git mercurial rsync subversion gcc-multilib
 ```
 
@@ -186,8 +194,88 @@ The first time you run this it will download `Buildroot` using git, and then it 
 
 `abd` defaults build to `full` and architecture to `x86_64`.
 
+If you wanted to create a boot image for your Raspberry Pi or NVidia TK1 (**note that this has not been fully implemented yet**) you would use one of these commands:
+
+```
+root@build:~#
+abd build --rpi
+```
+or
+```
+root@build:~#
+abd build --tk1
+```
+
+If you wanted to change the configuration for the Raspberry Pi Linux kernel, you would do something like this:
+
+```
+root@build:~#
+abd kconfig --rpi
+```
+
 ## Test AethOS using LXC
 
-If you don't have multiple machines, or if you want to be able to test using an existing...
+If you don't have multiple machines, or if you want to be able to test using an existing machine without screwing it up, you can easily use LXC to test.
 
-TODO Finish
+Create the environment variable where you checked out the ABD project; you did this earlier, but you might not be using that environment.
+
+```
+root@ubuntu:~#
+export ABD_ROOT=/home/trichards/dev/aethos-build-dist
+```
+
+Create a symbolic link for the LXC template.
+
+```
+root@ubuntu:~#
+ln -s $ABD_ROOT/lxc/templates/lxc-aethos /usr/share/lxc/templates/lxc-aethos
+```
+
+Create the LXC container.  I'm calling mine `nodennn` like `node000` as if I am creating a cluster with up to 1000 nodes, but you can call this container whatever you like.
+
+```
+root@ubuntu:~#
+lxc-create -B btrfs -t aethos -n node000
+```
+
+And then you can attach to it.
+
+```
+root@ubuntu:~#
+lxc-attach -n node000
+```
+
+## Making an ISO
+
+Once you have AethOS running in some containers, you'll probably want to build an ISO or sdcard image so that you can install AethOS on some of your other machines.
+
+To make an ISO is as simple as doing an `abd build --min` for whatever architecture you're targeting, assuming you've already done a `full` build.
+
+```
+root@build:~#
+abd build --min
+```
+
+This will create an ISO image on your container, but you can access it from your host machine at `/var/lib/lxc/build/rootfs/root/buildroot-x86_64-min-build/images/rootfs.iso9660`.
+
+For me, since my host Linux machine is actually running as a Parallels VM, I can copy the ISO to my Mac.
+
+```
+cp /var/lib/lxc/boot/rootfs/root/buildroot-x86_64-min-build/images/rootfs.iso9660 /media/psf/Home/Downloads/buildroot.iso
+```
+
+From there I can burn the image or I can just use it to create a new Parallels VM.
+
+## Making a sdcard image
+
+When you do a `full` `rpi` build (or a `tk1` build), the sdcard image is already created.  You can access it from your host machine at `/var/lib/lxc/build/rootfs/root/buildroot-rpi-full-build/images/rootfs.ext2`.
+
+This is an EXT4 file system that is bootable, so you can use `dd` to copy that image to an sdcard, plug the card into your Raspberry Pi or your NVidia Jetson TK1 and boot it up using AethOS.
+
+**Please note that ABD does not fully support rpi and tk1 yet, but I'm committed to supporting these platforms.  I personally have 8 Raspberry Pis and 2 Jetson TK1 computers that need AethOS installed in order for me to complete my home installation of AethOS.**
+
+For now, if you need to use Raspberry Pi or NVidia Jetson TK1 machines, just manually build AethOS on those machines within a container.  It wastes a lot of space since you have a full Ubuntu or Raspian too, but at least it works.
+
+## Further Steps
+
+TODO add information about configuring, using, etc, but that probably should go in a different .md or in a wiki.

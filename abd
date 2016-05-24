@@ -244,6 +244,20 @@ config()
 }
 
 
+config_kernel()
+{
+  export BR2_EXTERNAL=/root/abd/br2_external
+  export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
+
+  pushd /root/buildroot > /dev/null || getBuildRoot
+
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} linux-menuconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} linux-update-defconfig
+
+  popd > /dev/null
+}
+
 configall()
 {
   export BR2_EXTERNAL=/root/abd/br2_external
@@ -285,15 +299,26 @@ $1 command
 
   Available commands:
 
+  build       Executes the Buildroot make
+                This builds the Linux Kernel as well as
+                all of the host and target packages.
+
+  config      Configures the Buildroot system
+                This is where you would add target packages
+
+  kconfig     Configures the Linux Kernel
+                This is where you make custom kernel tweaks
+
+    Note that config and kconfig will modify the aethos-build-dist
+  files, so make sure that you're working in your own personal fork of
+  this git project if you intend on saving the changes.
+
+  Deprecated commands (retained for reference):
+
   initfs      Creates the initfs in /root/initfs
   mkiso       Creates the iso of CD_root
   mkinstall   Create the installation script
   all         Executes all of the buid steps
-
-  Experimental commands:
-
-  build       Executes the buildroot make
-  config
 
   Additional options:
 
@@ -349,6 +374,7 @@ case ${cmd} in
   all)            initfs; mkiso; mkinstall; exit 0;;
   build)          build; exit 0;;
   config)         config; exit 0;;
+  kconfig)        config_kernel; exit 0;;
   clean)          clean; exit 0;;
   testgo)         testgo; exit 0;;
   *)              echo Bad command && usage $0 && exit 0;;
