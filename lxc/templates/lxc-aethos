@@ -71,33 +71,33 @@ install_aethos()
 
     # Copy the Aethos rootfs build using buildroot (full build)
     pushd $rootfs > /dev/null || return 1
-    tar -xvf /var/lib/lxc/boot/rootfs/root/buildroot-x86_64-full-build/images/rootfs.tar
+    tar -xvf /var/lib/lxc/build/rootfs/root/buildroot-x86_64-full-build/images/rootfs.tar
     popd > /dev/null
 
     cat <<EOF >> $path/config
 lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
 EOF
 
-    pushd $rootfs/dev > /dev/null || return 1
-
-    # minimal devices needed for aethos
-    if [ $in_userns -eq 1 ]; then
-        for dev in tty console tty0 tty1 ram0 null urandom; do
-            echo "lxc.mount.entry = /dev/$dev dev/$dev    none bind,optional,create=file 0 0" >> $path/config
-        done
-    else
-        mknod -m 666 tty c 5 0       || res=1
-        mknod -m 666 console c 5 1   || res=1
-        mknod -m 666 tty0 c 4 0      || res=1
-        mknod -m 666 tty1 c 4 0      || res=1
-        mknod -m 666 tty5 c 4 0      || res=1
-        mknod -m 600 ram0 b 1 0      || res=1
-        mknod -m 666 null c 1 3      || res=1
-        mknod -m 666 zero c 1 5      || res=1
-        mknod -m 666 urandom c 1 9   || res=1
-    fi
-
-    popd > /dev/null
+    # pushd $rootfs/dev > /dev/null || return 1
+    #
+    # # minimal devices needed for aethos
+    # if [ $in_userns -eq 1 ]; then
+    #     for dev in tty console tty0 tty1 ram0 null urandom; do
+    #         echo "lxc.mount.entry = /dev/$dev dev/$dev    none bind,optional,create=file 0 0" >> $path/config
+    #     done
+    # else
+    #     mknod -m 666 tty c 5 0       || res=1
+    #     mknod -m 666 console c 5 1   || res=1
+    #     mknod -m 666 tty0 c 4 0      || res=1
+    #     mknod -m 666 tty1 c 4 0      || res=1
+    #     mknod -m 666 tty5 c 4 0      || res=1
+    #     mknod -m 600 ram0 b 1 0      || res=1
+    #     mknod -m 666 null c 1 3      || res=1
+    #     mknod -m 666 zero c 1 5      || res=1
+    #     mknod -m 666 urandom c 1 9   || res=1
+    # fi
+    #
+    # popd > /dev/null
 
     # root user defined
     cat <<EOF >> $rootfs/etc/passwd
@@ -130,41 +130,41 @@ EOF
     # writable and readable for other
     chmod 644 $rootfs/etc/inittab || return 1
 
-    cat <<EOF >> $rootfs/usr/share/udhcpc/default.script
-#!/bin/sh
-case "\$1" in
-    deconfig)
-        ip addr flush dev \$interface
-        ;;
-
-    renew|bound)
-        # flush all the routes
-        if [ -n "\$router" ]; then
-            ip route del default 2> /dev/null
-        fi
-
-        # check broadcast
-        if [ -n "\$broadcast" ]; then
-            broadcast="broadcast \$broadcast"
-        fi
-
-        # add a new ip address
-        ip addr add \$ip/\$mask \$broadcast dev \$interface
-
-        if [ -n "\$router" ]; then
-            ip route add default via \$router dev \$interface
-        fi
-
-        [ -n "\$domain" ] && echo search \$domain > /etc/resolv.conf
-        for i in \$dns ; do
-            echo nameserver \$i >> /etc/resolv.conf
-        done
-        ;;
-esac
-exit 0
-EOF
-
-    chmod 744 $rootfs/usr/share/udhcpc/default.script
+#     cat <<EOF >> $rootfs/usr/share/udhcpc/default.script
+# #!/bin/sh
+# case "\$1" in
+#     deconfig)
+#         ip addr flush dev \$interface
+#         ;;
+#
+#     renew|bound)
+#         # flush all the routes
+#         if [ -n "\$router" ]; then
+#             ip route del default 2> /dev/null
+#         fi
+#
+#         # check broadcast
+#         if [ -n "\$broadcast" ]; then
+#             broadcast="broadcast \$broadcast"
+#         fi
+#
+#         # add a new ip address
+#         ip addr add \$ip/\$mask \$broadcast dev \$interface
+#
+#         if [ -n "\$router" ]; then
+#             ip route add default via \$router dev \$interface
+#         fi
+#
+#         [ -n "\$domain" ] && echo search \$domain > /etc/resolv.conf
+#         for i in \$dns ; do
+#             echo nameserver \$i >> /etc/resolv.conf
+#         done
+#         ;;
+# esac
+# exit 0
+# EOF
+#
+#     chmod 744 $rootfs/usr/share/udhcpc/default.script
 
     return $res
 }
@@ -341,17 +341,17 @@ lxc.mount.auto = cgroup:mixed proc:mixed sys:mixed
 lxc.mount.entry = shm /dev/shm tmpfs defaults 0 0
 EOF
 
-    libdirs="\
-        lib \
-        usr/lib \
-        lib64 \
-        usr/lib64"
-
-    for dir in $libdirs; do
-        if [ -d "/$dir" ] && [ -d "$rootfs/$dir" ]; then
-            echo "lxc.mount.entry = /$dir $dir none ro,bind 0 0" >> $path/config
-        fi
-    done
+    # libdirs="\
+    #     lib \
+    #     usr/lib \
+    #     lib64 \
+    #     usr/lib64"
+    #
+    # for dir in $libdirs; do
+    #     if [ -d "/$dir" ] && [ -d "$rootfs/$dir" ]; then
+    #         echo "lxc.mount.entry = /$dir $dir none ro,bind 0 0" >> $path/config
+    #     fi
+    # done
     echo "lxc.mount.entry = /sys/kernel/security sys/kernel/security none ro,bind,optional 0 0" >>$path/config
 }
 
@@ -426,11 +426,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-configure_aethos $rootfs
-if [ $? -ne 0 ]; then
-    echo "failed to configure aethos template"
-    exit 1
-fi
+# configure_aethos $rootfs
+# if [ $? -ne 0 ]; then
+#     echo "failed to configure aethos template"
+#     exit 1
+# fi
 
 copy_configuration $path $rootfs $name
 if [ $? -ne 0 ]; then

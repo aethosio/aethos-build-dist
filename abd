@@ -253,7 +253,7 @@ config_kernel()
 
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} linux-menuconfig
-  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} linux-update-defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} linux-update-config
 
   popd > /dev/null
 }
