@@ -238,8 +238,13 @@ root@ubuntu:~#
 lxc-create -B btrfs -t aethos -n node000
 ```
 
-And then you can attach to it.
+Next, start the container in forground mode.
+```
+root@ubuntu:~#
+lxc-start -F -n node000
+```
 
+And then you can attach to it in another console.
 ```
 root@ubuntu:~#
 lxc-attach -n node000

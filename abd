@@ -202,28 +202,14 @@ build()
     pushd /root/buildroot > /dev/null || getBuildRoot
 
     make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
-    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT}
+    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} $build_target
 
-    if [ "$size" == "full" ]
+    if [ "$size" == "full" ] && [ "$build_target" == "all" ]
     then
       echo Copying the output file system to the min overlay file sytem
       mkdir -p /root/rootfs/${arch}/min/install
       cp ${BR2_OUTPUT}/images/rootfs.tar.gz /root/rootfs/${arch}/min/install
     fi
-
-    popd > /dev/null
-}
-
-testgo()
-{
-    export BR2_EXTERNAL=/root/abd/br2_external
-    export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
-    mkdir -p ${BR2_OUTPUT} 2> /dev/null
-
-    pushd /root/buildroot > /dev/null || getBuildRoot
-
-    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
-    make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} golang
 
     popd > /dev/null
 }
@@ -240,9 +226,7 @@ config()
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} savedefconfig BR2_DEFCONFIG=${BR2_EXTERNAL}/configs/aethos_${arch}_${size}_defconfig
 
   popd > /dev/null
-
 }
-
 
 config_kernel()
 {
@@ -285,10 +269,10 @@ clean()
   pushd /root/buildroot > /dev/null || getBuildRoot
 
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
-  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} clean
+#  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} clean
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} golang-dirclean
 
   popd > /dev/null
-
 }
 
 usage()
@@ -328,12 +312,15 @@ $1 command
   -t|--tk1     Set the architecture to arm/NVidia TK1
   -f|--full    Set the size to be full
   -m|--min     Set the size to be min
+  --target     Used in conjunction with build command
+                  Sets the target of the make command.
 
 EOF
 }
 
 arch="x86_64"
 size="full"
+build_target="all"
 
 # Verify the command was set.
 if [ -z $1 ]; then
@@ -360,6 +347,7 @@ do
     -t|--tk1)     shift 1; arch="tk1";;
     -f|--full)    shift 1; size="full";;
     -m|--min)     shift 1; size="min";;
+    --target)     shift 1; build_target=$1; shift 1;;
     --)           shift 1; break;;
     *)            break ;;
   esac
@@ -376,6 +364,5 @@ case ${cmd} in
   config)         config; exit 0;;
   kconfig)        config_kernel; exit 0;;
   clean)          clean; exit 0;;
-  testgo)         testgo; exit 0;;
   *)              echo Bad command && usage $0 && exit 0;;
 esac

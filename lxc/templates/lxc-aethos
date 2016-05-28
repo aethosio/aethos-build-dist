@@ -75,7 +75,8 @@ install_aethos()
     popd > /dev/null
 
     cat <<EOF >> $path/config
-lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
+# Uncomment this next line to mount ABD
+#lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
 EOF
 
     # pushd $rootfs/dev > /dev/null || return 1
@@ -101,7 +102,7 @@ EOF
 
     # root user defined
     cat <<EOF >> $rootfs/etc/passwd
-root:x:0:0:root:/root:/bin/sh
+root:x:0:0:root:/root:/bin/bash
 EOF
 
     cat <<EOF >> $rootfs/etc/group

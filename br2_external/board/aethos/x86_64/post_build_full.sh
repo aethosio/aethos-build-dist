@@ -1,0 +1,12 @@
+#!/bin/bash
+echo Working directory: `pwd`
+echo Args: $1
+echo Host: $HOST_DIR
+echo Staging: $STAGING_DIR
+echo Target: $TARGET_DIR
+env > /root/build_env.txt
+# Working directory: /root/buildroot
+# Args: /root/buildroot-x86_64-full-build/target
+# Host: /root/buildroot-x86_64-full-build/host
+# Staging: /root/buildroot-x86_64-full-build/host/usr/x86_64-buildroot-linux-gnu/sysroot
+# Target: /root/buildroot-x86_64-full-build/target
