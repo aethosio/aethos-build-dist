@@ -12,4 +12,5 @@ env > /root/build_env.txt
 # Target: /root/buildroot-x86_64-full-build/target
 
 # Change any /bin/sh shells to use /bin/bash instead.
-sed -i ’s%/bin/sh%/bin/bash%’ $TARGET_DIR/etc/passwd
+#
+sed -i 's%/bin/sh%/bin/bash%' $TARGET_DIR/etc/passwd
