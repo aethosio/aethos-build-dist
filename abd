@@ -209,6 +209,7 @@ build()
       echo Copying the output file system to the min overlay file sytem
       mkdir -p /root/rootfs/${arch}/min/install
       cp ${BR2_OUTPUT}/images/rootfs.tar.gz /root/rootfs/${arch}/min/install
+      cp /root/abd/install.sh /root/rootfs/${arch}/min/install
     fi
 
     popd > /dev/null

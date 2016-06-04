@@ -14,3 +14,7 @@ env > /root/build_env.txt
 # Change any /bin/sh shells to use /bin/bash instead.
 #
 sed -i 's%/bin/sh%/bin/bash%' $TARGET_DIR/etc/passwd
+
+# Copy install2 (post CHROOT installation script)
+mkdir -p $TARGET_DIR/install
+cp /root/abd/install2.sh $TARGET_DIR/install/install.sh
