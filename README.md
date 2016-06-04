@@ -120,7 +120,7 @@ Update your build container with software required for the rest of this install.
 root@build:~#
 apt update
 apt upgrade
-apt install make gcc libncurses5-dev libelf-dev bc busybox grub mkisofs
+apt install make gcc libncurses5-dev libelf-dev bc busybox mkisofs
 ```
 
 Additional packages:
@@ -128,6 +128,12 @@ Additional packages:
 ```
 root@build:~#
 apt install sed binutils build-essential g++ bash patch gzip bzip2 perl tar cpio python unzip rsync wget cvs git mercurial rsync subversion gcc-multilib
+```
+
+On non-ARM host platforms, also install grub.
+```
+root@build:~#
+apt install grub
 ```
 
 ### Building AethOS
