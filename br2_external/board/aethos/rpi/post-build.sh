@@ -41,7 +41,7 @@ Domains=local
 EOF
 
 # Support for dynamic host name
-cat <<EOF > ${TARGET_DIR}/lib/systemd/system/aethos-hostname.service
+cat <<'EOF' > ${TARGET_DIR}/lib/systemd/system/aethos-hostname.service
 [Unit]
 Description=AethOS Node host name
 After=systemd-resolved.service
@@ -56,31 +56,11 @@ StandardOutput=syslog+console
 WantedBy=multi-user.target
 EOF
 
-cat <<EOF > ${TARGET}/usr/bin/aethos-hostname
+cat <<'EOF' > ${TARGET_DIR}/usr/bin/aethos-hostname
 #!/bin/bash
-!/bin/sh
-# Filename:     /etc/dhcp/dhclient-exit-hooks.d/hostname
-# Purpose:      Used by dhclient-script to set the hostname of the system
-#               to match the DNS information for the host as provided by
-#               DHCP.
-#
-
-
-# Do not update hostname for virtual machine IP assignments
-if [ "$interface" != "eth0" ] && [ "$interface" != "wlan0" ]
-then
-    return
-fi
-
-
-if [ "$reason" != BOUND ] && [ "$reason" != RENEW ] \
-   && [ "$reason" != REBIND ] && [ "$reason" != REBOOT ]
-then
-        return
-fi
-
+new_ip_address=$(/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1 }')
 hostname=$(host $new_ip_address | cut -d ' ' -f 5 | sed -r 's/((.*)[^\.])\.?/\1/g' )
 echo $hostname > /etc/hostname.aethos
 hostnamectl set-hostname $hostname
 EOF
-chmod u+x ${TARGET}/usr/bin/aethos-hostname
+chmod u+x ${TARGET_DIR}/usr/bin/aethos-hostname
