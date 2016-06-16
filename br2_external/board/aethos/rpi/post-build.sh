@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# This script is a bit hackish and probably a lot of it can be moved
+# into Buildroot, but since I'm not familiar with Buildroot then
+# for now I'm going to hack the things I can't figure out where it should
+# otherwise go.
+
 set -u
 set -e
 
@@ -64,3 +69,35 @@ echo $hostname > /etc/hostname.aethos
 hostnamectl set-hostname $hostname
 EOF
 chmod u+x ${TARGET_DIR}/usr/bin/aethos-hostname
+
+###############################
+# Additional Go HOST tools
+
+SAVE_PATH=$PATH
+# HOST_GO_ENV=`cat /root/HOST_GO_ENV`;export $HOST_GO_ENV;PATH=$PATH:$GOBIN:$HOST_DIR/usr/bin;GOBIN_SAVE=$GOBIN;export GOBIN=
+# go get github.com/Masterminds/glide
+# cd $GOPATH/src/github.com/Masterminds/glide
+# GOARCH=
+# make build
+# cp glide $HOST_DIR/usr/bin/glide
+
+###############################
+# Additional Go TARGET builds
+
+PATH=$SAVE_PATH
+TARGET_GO_ENV=`cat /root/TARGET_GO_ENV`;export $TARGET_GO_ENV;PATH=$PATH:$GOBIN;GOBIN_SAVE=$GOBIN;export GOBIN=
+
+#go get github.com/aethos/etcd_v0
+
+# cd /root/coreos/src/third_party/etcd
+#./build
+#
+# if [ -z "${GOARCH}" ] || [ "${GOARCH}" = "$(go env GOHOSTARCH)" ]; then
+#         out="bin"
+# else
+#         out="bin/${GOARCH}"
+# fi
+#
+#
+# ${INSTALL} -D -m 0755 ${out}/etcd ${TARGET_DIR}/usr/bin/etcd
+# ${INSTALL} -D -m 0755 ${out}/etcdctl ${TARGET_DIR}/usr/bin/etcdctl

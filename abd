@@ -365,5 +365,6 @@ case ${cmd} in
   config)         config; exit 0;;
   kconfig)        config_kernel; exit 0;;
   clean)          clean; exit 0;;
+  goenv)          export GOLANG_ENV=$(</root/GOLANG_ENV); export $(</root/GOLANG_ENV);;
   *)              echo Bad command && usage $0 && exit 0;;
 esac

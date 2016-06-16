@@ -73,6 +73,42 @@ define GOLANG_BUILD_CMDS
 	cd $(@D)/src/ && $(GOLANG_ENV) ./make.bash --no-banner
 endef
 
+HOST_GO_ENV = \
+	GOROOT_BOOTSTRAP=$(HOST_GO_ROOT) \
+	GOROOT="$(@D)" \
+	GOBIN="$(HOST_GO_ROOT)/bin" \
+	GOARCH=$(GOLANG_GOARCH) \
+	$(if $(GOLANG_GOARM),GOARM=$(GOLANG_GOARM)) \
+	CC_FOR_TARGET="$(TARGET_CC)" \
+	LD_FOR_TARGET="$(TARGET_LD)" \
+	CXX_FOR_TARGET="$(TARGET_CXX)" \
+	GOOS=linux \
+	GO_NO_HOST=1 \
+	CGO_ENABLED=$(HOST_GO_CGO_ENABLED) \
+	CC=$(HOSTCC_NOCCACHE) \
+	GOPATH=$(HOST_DIR)/go-work \
+	INSTALL=$(INSTALL) \
+	GO15VENDOREXPERIMENT=1 \
+	HOST_DIR=$(HOST_DIR)
+
+TARGET_GO_PATH = ${TARGET_DIR}/root/go-work
+
+TARGET_GO_ENV = \
+	GOROOT_BOOTSTRAP=$(HOST_GO_ROOT) \
+	GOROOT="$(@D)" \
+	GOBIN=$(TARGET_DIR)/usr/bin/ \
+	GOARCH=$(GOLANG_GOARCH) \
+	$(if $(GOLANG_GOARM),GOARM=$(GOLANG_GOARM)) \
+	CC_FOR_TARGET="$(TARGET_CC)" \
+	LD_FOR_TARGET="$(TARGET_LD)" \
+	CXX_FOR_TARGET="$(TARGET_CXX)" \
+	GOOS=linux \
+	GO_NO_HOST=1 \
+	CGO_ENABLED=$(HOST_GO_CGO_ENABLED) \
+	CC=$(HOSTCC_NOCCACHE) \
+	GOPATH=$(TARGET_GO_PATH) \
+	INSTALL=$(INSTALL)
+
 # We must install both the src/ and pkg/ subdirs because they
 # contain the go "runtime".
 #(not used) cp -a $(@D)/include $(TARGET_DIR)/usr/lib/go/
@@ -82,6 +118,10 @@ define GOLANG_INSTALL_TARGET_CMDS
 	mkdir -p $(TARGET_DIR)/usr/lib/go/
 	cp -a $(@D)/src $(TARGET_DIR)/usr/lib/go/
 	cp -a $(@D)/pkg $(TARGET_DIR)/usr/lib/go/
+
+	# Set up
+	echo $(HOST_GO_ENV) > /root/HOST_GO_ENV
+	echo $(TARGET_GO_ENV) > /root/TARGET_GO_ENV
 endef
 
 # define HOST_GOLANG_BUILD_CMDS

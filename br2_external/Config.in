@@ -2,3 +2,7 @@
 menu "Interpreter languages and scripting"
   source "$BR2_EXTERNAL/package/golang/Config.in"
 endmenu
+
+#menu "CoreOS / AethOS system"
+#  source "$BR2_EXTERNAL/package/etcd/Config.in"
+#endmenu
