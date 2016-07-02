@@ -1,0 +1,22 @@
+config BR2_PACKAGE_ZENSPACES_LIBC_SUPPORTS
+  bool
+  default y if BR2_TOOLCHAIN_USES_GLIBC
+	default y if BR2_TOOLCHAIN_USES_UCLIBC && \
+		(BR2_arm || BR2_armeb || BR2_i386 || BR2_mips || BR2_mipsel || BR2_mips64 || BR2_mips64el || BR2_x86_64)
+
+comment "zenspaces needs a uClibc or glibc toolchain w/ C++, threads, wchar, dynamic library"
+	depends on !BR2_INSTALL_LIBSTDCPP || \
+		!BR2_TOOLCHAIN_HAS_THREADS || !BR2_USE_WCHAR || \
+		BR2_STATIC_LIBS || !BR2_PACKAGE_ZENSPACES_LIBC_SUPPORTS
+
+config BR2_PACKAGE_ZENSPACES
+  bool "zenspaces"
+  depends on BR2_TOOLCHAIN_HAS_THREADS
+  select BR2_PACKAGE_ZEROMQ
+  select BR2_PACKAGE_LEVELDB
+  select BR2_PACKAGE_ZMQPP
+  select BR2_PACKAGE_ZMQPP_CLIENT
+  select BR2_PACKAGE_SNAPPY
+  help
+    Zen Spaces is a replicated event sourced reactive object
+    oriented database.

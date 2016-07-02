@@ -5,4 +5,5 @@ endmenu
 
 #menu "CoreOS / AethOS system"
 #  source "$BR2_EXTERNAL/package/etcd/Config.in"
+  source "$BR2_EXTERNAL/package/zenspaces/Config.in"
 #endmenu
