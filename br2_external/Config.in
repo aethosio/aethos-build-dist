@@ -1,10 +1,10 @@
 
 menu "Interpreter languages and scripting"
-  source "$BR2_EXTERNAL/package/golang/Config.in"
+  source "$BR2_EXTERNAL_AETHOS_PATH/package/golang/Config.in"
 endmenu
 
 menu "AethOS / IndieZen"
-#  source "$BR2_EXTERNAL/package/etcd/Config.in"
-  source "$BR2_EXTERNAL/package/zenspaces/Config.in"
-  source "$BR2_EXTERNAL/package/zenfuse/Config.in"
+#  source "$BR2_EXTERNAL_AETHOS_PATH/package/etcd/Config.in"
+  source "$BR2_EXTERNAL_AETHOS_PATH/package/zenspaces/Config.in"
+  source "$BR2_EXTERNAL_AETHOS_PATH/package/zenfuse/Config.in"
 endmenu
