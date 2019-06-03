@@ -186,7 +186,7 @@ EOF
 getBuildRoot()
 {
   pushd /root > /dev/null || return 1
-  git clone git://git.buildroot.net/buildroot
+  git clone https://git.buildroot.net/buildroot
   popd > /dev/null
   cd /root/buildroot || return 1
   #git checkout tags/2016.05-rc2
@@ -222,7 +222,7 @@ config()
 
   pushd /root/buildroot > /dev/null || getBuildRoot
 
-  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
+  #make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} nconfig
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} savedefconfig BR2_DEFCONFIG=${BR2_EXTERNAL}/configs/aethos_${arch}_${size}_defconfig
 
@@ -236,7 +236,7 @@ config_kernel()
 
   pushd /root/buildroot > /dev/null || getBuildRoot
 
-  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
+  #make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} linux-menuconfig
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} linux-update-defconfig
 
@@ -308,13 +308,14 @@ $1 command
   Additional options:
 
   -h|--help   Displays this help
-  -x|--x86_64  Set the architecture to x86_64
+  -x|--x86_64  Set the architecture to x86_64 (default)
   -r|--rpi     Set the architecture to arm/Raspberry Pi
   -t|--tk1     Set the architecture to arm/NVidia TK1
-  -f|--full    Set the size to be full
+  -f|--full    Set the size to be full (default)
   -m|--min     Set the size to be min
   --target     Used in conjunction with build command
                   Sets the target of the make command.
+                  (default = all)
 
 EOF
 }

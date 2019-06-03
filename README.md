@@ -7,15 +7,9 @@ This is a collection of shell scripts used for building an AethOS distribution C
 
 In `code` blocks, you'll notice the first line sometimes contains a line like one of these:
 
-```
-root@ubuntu:~#
-trichards@ubuntu:~/dev$
-root@build:/#
-```
-
-The first line means that you use a `root` shell on the `host` machine.  The second line means you use a `user` / less privileged shell on the `host` machine.  The third line means you should use a `root` shell attached to the `build` container.
-
-Alternatively, you can use a `user` shell and prefix the commands with `sudo` or `sudo lxc-attach -n build --`.
+* `root@ubuntu:~#` - use a `root` shell on the `host` machine.
+* `trichards@ubuntu:~/dev$` - a `user` / less privileged shell on the `host` machine.  
+* `root@build:/#` - use a `root` shell attached to the `build` container.  Alternatively, you can use a `user` shell and prefix the commands with `sudo` or `sudo lxc-attach -n build --`.
 
 For example, if the build instructions say do this:
 ```
@@ -60,18 +54,20 @@ mkfs.btrfs /dev/sdb1
 mount /dev/sdb1 /var/lib/lxc
 ```
 
-We'll create a container with Ubuntu Xenial 64 bit OS installed. The `-n build` names the container "build"; it's important that you use this container name because other scripts will use this (specifically the lxc-aethos LXC template)
+We'll create a container with Ubuntu Bionic Beaver 64 bit OS installed. The `-n build` names the container "build"; it's important that you use this container name because other scripts will use this (specifically the lxc-aethos LXC template)
 
 ```
 root@ubuntu:~#
-lxc-create -B btrfs -t download -n build -- -d ubuntu -r xenial -a amd64
+lxc-create -B btrfs -t download -n build -- -d ubuntu -r bionic -a amd64
 ```
+
+You might also have to add `--keyserver hkp://p80.pool.sks-keyservers.net:80` if the keyserver is blocked by your firewall.
 
 Alternatively, if you're doing this on an NVidia TK1, use this command for the appropriate architecture.
 
 ```
 root@ubuntu:~#
-lxc-create -B btrfs -t download -n build -- -d ubuntu -r xenial -a armhf
+lxc-create -B btrfs -t download -n build -- -d ubuntu -r bionic -a armhf
 ```
 
 You can verify that the brtfs file system was used.
