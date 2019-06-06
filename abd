@@ -197,8 +197,13 @@ build()
 {
     export BR2_EXTERNAL=/root/abd/br2_external
     export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
-    mkdir -p ${BR2_OUTPUT} 2> /dev/null
 
+    folders=(target images host build staging graphs)
+    for f in "${folders[@]}"
+    do
+      mkdir -p ${BR2_OUTPUT}/${f} 2> /dev/null
+    done
+    
     pushd /root/buildroot > /dev/null || getBuildRoot
 
     make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
@@ -222,8 +227,8 @@ config()
 
   pushd /root/buildroot > /dev/null || getBuildRoot
 
-  #make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
-  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} nconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} menuconfig
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} savedefconfig BR2_DEFCONFIG=${BR2_EXTERNAL}/configs/aethos_${arch}_${size}_defconfig
 
   popd > /dev/null
@@ -270,8 +275,24 @@ clean()
   pushd /root/buildroot > /dev/null || getBuildRoot
 
   make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
-#  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} clean
-  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} golang-dirclean
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} clean all
+  #make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} golang-dirclean
+
+  popd > /dev/null
+}
+
+runMake()
+{
+  target=$1
+  shift 1
+  
+  export BR2_EXTERNAL=/root/abd/br2_external
+  export BR2_OUTPUT=/root/buildroot-${arch}-${size}-build
+
+  pushd /root/buildroot > /dev/null || getBuildRoot
+
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
+  make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} ${target} $1 $2 $3
 
   popd > /dev/null
 }
@@ -366,6 +387,7 @@ case ${cmd} in
   config)         config; exit 0;;
   kconfig)        config_kernel; exit 0;;
   clean)          clean; exit 0;;
+  make)           runMake; exit 0;;
   goenv)          export GOLANG_ENV=$(</root/GOLANG_ENV); export $(</root/GOLANG_ENV);;
   *)              echo Bad command && usage $0 && exit 0;;
 esac
