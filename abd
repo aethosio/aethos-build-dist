@@ -203,7 +203,10 @@ build()
     do
       mkdir -p ${BR2_OUTPUT}/${f} 2> /dev/null
     done
-    
+
+    mkdir -p /root/rootfs/${arch}/min/install
+    mkdir -p /root/rootfs/${arch}/full
+
     pushd /root/buildroot > /dev/null || getBuildRoot
 
     make BR2_EXTERNAL=${BR2_EXTERNAL} O=${BR2_OUTPUT} aethos_${arch}_${size}_defconfig
@@ -212,7 +215,6 @@ build()
     if [ "$size" == "full" ] && [ "$build_target" == "all" ]
     then
       echo Copying the output file system to the min overlay file sytem
-      mkdir -p /root/rootfs/${arch}/min/install
       cp ${BR2_OUTPUT}/images/rootfs.tar.gz /root/rootfs/${arch}/min/install
       cp /root/abd/install.sh /root/rootfs/${arch}/min/install
     fi
