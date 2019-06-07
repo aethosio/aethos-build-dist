@@ -63,7 +63,53 @@ copy_binary()
     return 0
 }
 
-install_aethos()
+install_aethos_overlay()
+{
+    rootfs=$1
+    name=$2
+    res=0
+
+    # Create the file systems
+    mkdir $path/upper
+    mkdir $path/work
+    mkdir $rootfs
+
+    # Check to see if aethos exists
+    if [ -d /var/lib/lxc/aethos/rootfs ]; then
+        lower="/var/lib/lxc/aethos/rootfs"
+    else
+        mkdir $path/lower
+        lower="$path/lower"
+        # Extract it instead of doing archivemount (too slow!)
+        pushd $path/lower > /dev/null || return 1
+        tar -xvf /var/lib/lxc/build/rootfs/root/buildroot-x86_64-full-build/images/rootfs.tar
+        popd > /dev/null
+    fi
+
+    cat <<EOF >> $path/mount-$name.sh
+#!/bin/bash
+#archivemount $path/rootfs.tar.gz $path/lower
+mount -t overlay -o lowerdir=$lower/,workdir=$path/work/,upperdir=$path/upper/ overlayfs $path/rootfs
+EOF
+    chmod u+x $path/mount-$name.sh
+    $path/mount-$name.sh
+
+    cat <<EOF >> $path/umount-$name.sh
+#!/bin/bash
+#umount $path/lower
+umount $path/rootfs
+EOF
+
+    chmod u+x $path/umount-$name.sh
+
+    cat <<EOF >> $path/config
+lxc.hook.pre-mount = $path/mount-$name.sh
+lxc-hook.post-stop =  $path/umount-$name.sh
+EOF
+
+}
+
+install_aethos_cp()
 {
     rootfs=$1
     name=$2
@@ -73,6 +119,15 @@ install_aethos()
     pushd $rootfs > /dev/null || return 1
     tar -xvf /var/lib/lxc/build/rootfs/root/buildroot-x86_64-full-build/images/rootfs.tar
     popd > /dev/null
+}
+
+install_aethos()
+{
+    rootfs=$1
+    name=$2
+    res=0
+
+    install_aethos_overlay $rootfs $name
 
     cat <<EOF >> $path/config
 # Uncomment this next line to mount ABD

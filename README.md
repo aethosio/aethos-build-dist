@@ -1,4 +1,5 @@
 # aethos-build-dist
+
 AethOS distribution builder
 
 This is a collection of shell scripts used for building an AethOS distribution CD / sdcard image.
@@ -12,12 +13,15 @@ In `code` blocks, you'll notice the first line sometimes contains a line like on
 * `root@build:/#` - use a `root` shell attached to the `build` container.  Alternatively, you can use a `user` shell and prefix the commands with `sudo` or `sudo lxc-attach -n build --`.
 
 For example, if the build instructions say do this:
-```
+
+```bash
 root@build:/#
 abd build
 ```
+
 you can do this instead:
-```
+
+```bash
 trichards@ubuntu:~/dev$
 sudo lxc-attach -n build -- /root/abd/abd build
 ```
@@ -34,7 +38,7 @@ Assuming you have an Ubuntu installation, the following instructions will help y
 
 Since we use LXC containers within AethOS anyway, it only makes sense to create a container for our build "machine".  This will allow us to install a whole lot of software required for building, then discard it all without messing with our main machine.
 
-```
+```bash
 root@ubuntu:~#
 apt install lxc btrfs-tools
 ```
@@ -43,12 +47,12 @@ As a precursor, if you haven't already done so, you should (highly recommended, 
 
 Create the partition; here I'm creating it on `/dev/sdb`, which is another drive altogether.  Hopefully you have a spare partition somewhere, or maybe, like me, you're actually running Ubuntu on a virtual machine, which will make it easier for you to add a new virtual hard drive.
 
-```
+```bash
 root@ubuntu:~#
 cfdisk /dev/sdb
 ```
 
-```
+```bash
 root@ubuntu:~#
 mkfs.btrfs /dev/sdb1
 mount /dev/sdb1 /var/lib/lxc
@@ -56,7 +60,7 @@ mount /dev/sdb1 /var/lib/lxc
 
 We'll create a container with Ubuntu Bionic Beaver 64 bit OS installed. The `-n build` names the container "build"; it's important that you use this container name because other scripts will use this (specifically the lxc-aethos LXC template)
 
-```
+```bash
 root@ubuntu:~#
 lxc-create -B btrfs -t download -n build -- -d ubuntu -r bionic -a amd64
 ```
@@ -65,25 +69,28 @@ You might also have to add `--keyserver hkp://p80.pool.sks-keyservers.net:80` if
 
 Alternatively, if you're doing this on an NVidia TK1, use this command for the appropriate architecture.
 
-```
+```bash
 root@ubuntu:~#
 lxc-create -B btrfs -t download -n build -- -d ubuntu -r bionic -a armhf
 ```
 
 You can verify that the brtfs file system was used.
-```
+
+```bash
 root@ubuntu:~#
 btrfs sub list /var/lib/lxc/
 ```
 
 Somewhere, whether it's in your home/dev folder (which is what I do), or somewhere in your root folder, check out this repository using git.
 
-```
+```bash
 trichards@ubuntu:~/dev$
 git clone git@github.com:aethosio/aethos-build-dist.git
 ```
+
 or
-```
+
+```bash
 trichards@ubuntu:~/dev$
 git clone https://github.com/aethosio/aethos-build-dist.git
 ```
@@ -97,7 +104,7 @@ export ABD_ROOT=/home/trichards/dev/aethos-build-dist
 
 Mount it inside the `build` container you just created.
 
-```
+```bash
 root@ubuntu:~#
 echo "lxc.mount.entry=$ABD_ROOT root/abd none bind,create=dir" >> /var/lib/lxc/build/config
 ```
@@ -105,14 +112,16 @@ echo "lxc.mount.entry=$ABD_ROOT root/abd none bind,create=dir" >> /var/lib/lxc/b
 This gives you an example of how you can use your main machine to develop software and use that software inside a container without having to install all of the software necessary for building the software inside of your main machine.  This separation allows you to use software on your main machine that's not compatible with your target machine.
 
 Start the container and attach to it (or, at least start it and you can control it using `lxc-attach -n build -- <command>`).
-```
+
+```bash
 root@ubuntu:~#
 lxc-start -n build
 lxc-attach -n build
 ```
 
 Update your build container with software required for the rest of this install.
-```
+
+```bash
 root@build:~#
 apt update
 apt upgrade
@@ -127,7 +136,8 @@ apt install sed binutils build-essential g++ bash patch gzip bzip2 perl tar cpio
 ```
 
 On non-ARM host platforms, also install grub.
-```
+
+```bash
 root@build:~#
 apt install grub
 ```
@@ -137,7 +147,8 @@ apt install grub
 Now that you've attached to your build container and you've mapped `abd` (AethOS Build Distribution), you can use `abd` to help you build AethOS.
 
 First, add `abd` to your path.
-```
+
+```bash
 root@build:/#
 cd /root
 export PATH=$PATH:/root/abd
@@ -146,7 +157,7 @@ abd -h
 
 This `abd` command is a shell script that helps you build AethOS.  When you use the `-h` argument, it will give you a list of command line arguments and commands.
 
-```
+```bash
 abd command
 
   Available commands:
@@ -186,7 +197,7 @@ With this in mind, normally you'll only create a `full` build.  You only need to
 
 The simplest command is just to do a build.  You can change your configuration, but it's not really recommended that you change anything at this point.
 
-```
+```bash
 root@build~#
 abd config
 abd build
@@ -198,19 +209,21 @@ The first time you run this it will download `Buildroot` using git, and then it 
 
 If you wanted to create a boot image for your Raspberry Pi or NVidia TK1 (**note that this has not been fully implemented yet**) you would use one of these commands:
 
-```
+```bash
 root@build:~#
 abd build --rpi
 ```
+
 or
-```
+
+```bash
 root@build:~#
 abd build --tk1
 ```
 
 If you wanted to change the configuration for the Raspberry Pi Linux kernel, you would do something like this:
 
-```
+```bash
 root@build:~#
 abd kconfig --rpi
 ```
@@ -221,35 +234,63 @@ If you don't have multiple machines, or if you want to be able to test using an 
 
 Create the environment variable where you checked out the ABD project; you did this earlier, but you might not be using that environment.
 
-```
+```bash
 root@ubuntu:~#
 export ABD_ROOT=/home/trichards/dev/aethos-build-dist
 ```
 
-Create a symbolic link for the LXC template.
+Create a symbolic link for the LXC template. (this is also in config-lxc.sh)
 
-```
+```bash
 root@ubuntu:~#
 ln -s $ABD_ROOT/lxc/templates/lxc-aethos /usr/share/lxc/templates/lxc-aethos
 ```
 
-Create the LXC container.  I'm calling mine `nodennn` like `node000` as if I am creating a cluster with up to 1000 nodes, but you can call this container whatever you like.
+## Create the LXC container
 
-```
+I'm calling mine `nodennn` like `node000` as if I am creating a cluster with up to 1000 nodes, but you can call this container whatever you like.
+
+```bash
 root@ubuntu:~#
 lxc-create -B btrfs -t aethos -n node000
 ```
 
 Next, start the container in forground mode.
-```
+
+```bash
 root@ubuntu:~#
 lxc-start -F -n node000
 ```
 
 And then you can attach to it in another console.
-```
+
+```bash
 root@ubuntu:~#
 lxc-attach -n node000
+```
+
+## LXC Container with OverlayFS
+
+Alternatively, you can use less disk space if you use an `OverlayFS` with the ext2 file output from `abd`.
+
+In addition to using less disk space, the host machine will cache the underlying root filesystem using the same cache for all containers, so you'll get some additional performance using less memory.
+
+`lxc-create` will automatically using an `OverlayFS` mount if you first create an `aethos/rootfs` in `/var/lib/lxc` and then mount the `.ext2` root filesystem. (look at `copy_aethos.sh` for an example).
+
+```bash
+root@ubuntu:~#
+mkdir -p /var/lib/lxc/aethos/rootfs
+cp /var/lib/lxc/build/rootfs/root/buildroot-x86_64-full-build/images/rootfs.ext2 /var/lib/lxc/aethos
+mount /var/lib/lxc/aethos/rootfs.ext2 /var/lib/lxc/aethos/rootfs
+```
+
+Remember that this mount isn't permanent unless you add it to `fstab`, and remember that you must stop all of the `aethos` containers before copying / mounting a new version of the `rootfs.ext2` file.
+
+A minor change when creating a new container using the `OverlayFS`, don't specify the `btrfs` file system:
+
+```bash
+root@ubuntu:~#
+lxc-create -t aethos -n node000
 ```
 
 ## Making an ISO
@@ -258,7 +299,7 @@ Once you have AethOS running in some containers, you'll probably want to build a
 
 To make an ISO is as simple as doing an `abd build --min` for whatever architecture you're targeting, assuming you've already done a `full` build.
 
-```
+```bash
 root@build:~#
 abd build --min
 ```
@@ -267,7 +308,7 @@ This will create an ISO image on your container, but you can access it from your
 
 For me, since my host Linux machine is actually running as a Parallels VM, I can copy the ISO to my Mac.
 
-```
+```bash
 cp /var/lib/lxc/boot/rootfs/root/buildroot-x86_64-min-build/images/rootfs.iso9660 /media/psf/Home/Downloads/buildroot.iso
 ```
 
