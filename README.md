@@ -275,7 +275,7 @@ Alternatively, you can use less disk space if you use an `OverlayFS` with the ex
 
 In addition to using less disk space, the host machine will cache the underlying root filesystem using the same cache for all containers, so you'll get some additional performance using less memory.
 
-`lxc-create` will automatically using an `OverlayFS` mount if you first create an `aethos/rootfs` in `/var/lib/lxc` and then mount the `.ext2` root filesystem. (look at `copy_aethos.sh` for an example).
+`lxc-create` will automatically use an `OverlayFS` mount if you first create an `aethos/rootfs` in `/var/lib/lxc` and then mount the `.ext2` root filesystem. (look at `copy_aethos.sh` for an example).
 
 ```bash
 root@ubuntu:~#
@@ -286,7 +286,7 @@ mount /var/lib/lxc/aethos/rootfs.ext2 /var/lib/lxc/aethos/rootfs
 
 Remember that this mount isn't permanent unless you add it to `fstab`, and remember that you must stop all of the `aethos` containers before copying / mounting a new version of the `rootfs.ext2` file.
 
-A minor change when creating a new container using the `OverlayFS`, don't specify the `btrfs` file system:
+When creating a new container using the `OverlayFS`, don't specify the `btrfs` file system:
 
 ```bash
 root@ubuntu:~#
