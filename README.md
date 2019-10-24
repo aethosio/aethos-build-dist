@@ -232,6 +232,8 @@ abd kconfig --rpi
 
 If you don't have multiple machines, or if you want to be able to test using an existing machine without screwing it up, you can easily use LXC to test.
 
+### Configure LXC for AethOS
+
 Create the environment variable where you checked out the ABD project; you did this earlier, but you might not be using that environment.
 
 ```bash
@@ -246,7 +248,9 @@ root@ubuntu:~#
 ln -s $ABD_ROOT/lxc/templates/lxc-aethos /usr/share/lxc/templates/lxc-aethos
 ```
 
-## Create the LXC container
+### Create the LXC container
+
+This step shows you how to create an LXC container by copying the previously built AethOS root.  The advantage of this method is that you can have multiple versions of AethOS running at the same time that you're building a new version.
 
 I'm calling mine `nodennn` like `node000` as if I am creating a cluster with up to 1000 nodes, but you can call this container whatever you like.
 
@@ -255,7 +259,7 @@ root@ubuntu:~#
 lxc-create -B btrfs -t aethos -n node000
 ```
 
-Next, start the container in forground mode.
+Next, start the container in foreground mode.
 
 ```bash
 root@ubuntu:~#
@@ -269,11 +273,13 @@ root@ubuntu:~#
 lxc-attach -n node000
 ```
 
-## LXC Container with OverlayFS
+### Create LXC Container with OverlayFS
 
 Alternatively, you can use less disk space if you use an `OverlayFS` with the ext2 file output from `abd`.
 
 In addition to using less disk space, the host machine will cache the underlying root filesystem using the same cache for all containers, so you'll get some additional performance using less memory.
+
+This disadvantage of this method is that you must shut down all running containers before building a new version of AethOS root, and all running versions will always be the same (most recently built) version of AethOS.
 
 `lxc-create` will automatically use an `OverlayFS` mount if you first create an `aethos/rootfs` in `/var/lib/lxc` and then mount the `.ext2` root filesystem. (look at `copy_aethos.sh` for an example).
 
@@ -318,11 +324,7 @@ From there I can burn the image or I can just use it to create a new Parallels V
 
 When you do a `full` `rpi` build (or a `tk1` build), the sdcard image is already created.  You can access it from your host machine at `/var/lib/lxc/build/rootfs/root/buildroot-rpi-full-build/images/rootfs.ext2`.
 
-This is an EXT4 file system that is bootable, so you can use `dd` to copy that image to an sdcard, plug the card into your Raspberry Pi or your NVidia Jetson TK1 and boot it up using AethOS.
-
-**Please note that ABD does not fully support rpi and tk1 yet, but I'm committed to supporting these platforms.  I personally have 8 Raspberry Pis and 2 Jetson TK1 computers that need AethOS installed in order for me to complete my home installation of AethOS.**
-
-For now, if you need to use Raspberry Pi or NVidia Jetson TK1 machines, just manually build AethOS on those machines within a container.  It wastes a lot of space since you have a full Ubuntu or Raspian too, but at least it works.
+This is an EXT4 file system that is bootable, so you can use `dd` to copy that image to an sdcard, plug the card into your Raspberry Pi or your NVidia Jetson TK1 and boot it up into AethOS.
 
 ## Further Steps
 
