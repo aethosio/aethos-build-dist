@@ -109,6 +109,21 @@ EOF
 
 }
 
+install_buildbox_overlay()
+{
+    rootfs=$1
+    name=$2
+    res=0
+
+    # Create the file systems
+    mkdir $path/upper
+    mkdir $path/work
+    mkdir $rootfs
+
+    lower="$path/lower"
+    mkdir $lower
+}
+
 install_aethos_cp()
 {
     rootfs=$1
@@ -123,16 +138,33 @@ install_aethos_cp()
 
 install_aethos()
 {
+    install_common $1 $2
+}
+
+install_buildbox()
+{
+    install_common $1 $2
+}
+
+install_buildroot()
+{
+    install_common $1 $2
+
+
+    cat <<EOF >> $path/config
+# Uncomment this next line to mount ABD
+lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
+EOF
+
+}
+
+install_common()
+{
     rootfs=$1
     name=$2
     res=0
 
-    install_aethos_overlay $rootfs $name
-
-    cat <<EOF >> $path/config
-# Uncomment this next line to mount ABD
-#lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
-EOF
+    install_${aethos_type}_overlay $rootfs $name
 
     # pushd $rootfs/dev > /dev/null || return 1
     #
@@ -438,23 +470,31 @@ EOF
     return 0
 }
 
-options=$(getopt -o hp:n:s: -l help,rootfs:,path:,name:,mapped-uid:,mapped-gid:,ssh: -- "$@")
+options=$(getopt -o hp:n:s:t: -l help,rootfs:,path:,name:,mapped-uid:,mapped-gid:,ssh:,type: -- "$@")
 if [ $? -ne 0 ]; then
     usage $(basename $0)
     exit 1
 fi
 eval set -- "$options"
 
+# Valid types
+# aethos - minimal aethos node
+# buildbox - ubuntu + build tools
+# devbox - buildbox + dev tools
+# buildroot - buildbox + buildroot
+aethos_type="aethos"
+
 while true
 do
     case "$1" in
-        -h|--help)      usage $0 && exit 0;;
+        -h|--help)      usage $0 && exit 1;;
         -p|--path)      path=$2; shift 2;;
         --rootfs)       rootfs=$2; shift 2;;
         -n|--name)      name=$2; shift 2;;
         --mapped-uid)   LXC_MAPPED_UID=$2; shift 2;;
         --mapped-gid)   LXC_MAPPED_GID=$2; shift 2;;
         -s|--ssh)       SSH=$2; shift 2;;
+        -t|--type)      aethos_type=$2; shift 2;;
         --)             shift 1; break ;;
         *)              break ;;
     esac
@@ -480,7 +520,7 @@ if [ -z "$rootfs" ]; then
     fi
 fi
 
-install_aethos $rootfs $name
+install_$aethos_type $rootfs $name
 if [ $? -ne 0 ]; then
     echo "failed to install aethos's rootfs"
     exit 1

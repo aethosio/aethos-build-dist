@@ -1,0 +1,94 @@
+#!/bin/bash
+
+
+
+usage()
+{
+  cat <<EOF
+
+$1 command
+
+  Available commands:
+
+  init        Initializes AethOS Package Manager
+  buildbox    Create the base buildbox container
+  devbox      Create the base devbox container
+
+EOF
+}
+
+# x86_64
+#arch=`uname -m`
+
+# amd64
+arch=`dpkg --print-architecture`
+
+roots="/var/lib/lxc/_roots"
+
+doInit()
+{
+  if [ ! -d "/var/lib/lxc" ]; then
+    echo "/var/lib/lxc must exist"
+    exit 1
+  fi
+
+  if [ -d "/var/lib/lxc/ubuntu" ]; then
+    echo "Ubuntu base distro is already installed."
+  else
+    echo "About to do this; needs sudo"
+    echo "sudo lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch"
+    read -n 1 -s
+    sudo lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch --keyserver hkp://p80.pool.sks-keyservers.net:80
+  fi
+
+  if [ ! -d $roots ]; then
+    sudo mkdir $roots
+  fi
+
+  if [ ! -f "$roots/core.squash" ]; then
+    sudo mksquashfs "/var/lib/lxc/ubuntu/rootfs" "$roots/core.squash"
+  else
+    echo "core file system has already been created."
+  fi
+}
+
+doBuildBox()
+{
+  doInit
+
+  if [ -d "/var/lib/lxc/buildbox" ]; then
+    echo "BuildBox base container is already installed."
+  else
+    echo "About to do this; needs sudo"
+    echo "sudo lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch"
+    read -n 1 -s
+    sudo lxc-create -t aethos -n buildbox -- -t buildbox
+  fi
+
+}
+
+# Verify the command was set.
+if [ -z $1 ]; then
+  echo Command must be specified.
+  usage $(basename $0)
+  exit 1
+fi
+
+options=$(getopt -o hxrtfm -l help x86_64 rpi tk1 full min -- "$@")
+if [ $? -ne 0 ]; then
+    usage $(basename $0)
+    exit 1
+fi
+
+cmd=$1
+shift 1
+
+
+# Eventually there will be more; init is the only thing
+# implemented so far.
+case ${cmd} in
+  init)         doInit; exit 0;;
+  buildbox)     doBuildBox; exit 0;;
+  *)            echo Bad command && usage $0 && exit 0;;
+esac
+

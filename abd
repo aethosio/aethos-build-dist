@@ -378,8 +378,7 @@ do
   esac
 done
 
-# Eventually there will be more; initfs is the only thing
-# implemented so far.
+# Process the command
 case ${cmd} in
   initfs)         initfs; exit 0;;
   mkiso)          mkiso; exit 0;;
