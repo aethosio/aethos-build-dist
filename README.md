@@ -40,7 +40,7 @@ Since we use LXC containers within AethOS anyway, it only makes sense to create 
 
 ```bash
 root@ubuntu:~#
-apt install lxc btrfs-tools
+apt install lxc unionfs-fuse
 ```
 
 As a precursor, if you haven't already done so, you should (highly recommended, but not required) create a special partition for your containers formatted using btrfs and mount it at `/var/lib/lxc/`.

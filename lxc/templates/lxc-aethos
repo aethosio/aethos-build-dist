@@ -88,7 +88,6 @@ install_aethos_overlay()
 
     cat <<EOF >> $path/mount-$name.sh
 #!/bin/bash
-#archivemount $path/rootfs.tar.gz $path/lower
 mount -t overlay -o lowerdir=$lower/,workdir=$path/work/,upperdir=$path/upper/ overlayfs $path/rootfs
 EOF
     chmod u+x $path/mount-$name.sh
@@ -96,7 +95,40 @@ EOF
 
     cat <<EOF >> $path/umount-$name.sh
 #!/bin/bash
-#umount $path/lower
+umount $path/rootfs
+EOF
+
+    chmod u+x $path/umount-$name.sh
+
+    cat <<EOF >> $path/config
+lxc.hook.pre-mount = $path/mount-$name.sh
+lxc-hook.post-stop =  $path/umount-$name.sh
+EOF
+
+}
+
+install_buildroot_overlay()
+{
+    rootfs=$1
+    name=$2
+    res=0
+
+    # Create the file systems
+    mkdir $path/upper
+    mkdir $path/work
+    #mkdir $rootfs
+
+    lower="/var/lib/lxc/_roots/buildbox"
+
+    cat <<EOF >> $path/mount-$name.sh
+#!/bin/bash
+mount -t overlay -o lowerdir=$lower/,workdir=$path/work/,upperdir=$path/upper/ overlayfs $path/rootfs
+EOF
+    chmod u+x $path/mount-$name.sh
+    $path/mount-$name.sh
+
+    cat <<EOF >> $path/umount-$name.sh
+#!/bin/bash
 umount $path/rootfs
 EOF
 
@@ -120,8 +152,30 @@ install_buildbox_overlay()
     mkdir $path/work
     mkdir $rootfs
 
-    lower="$path/lower"
+    lower="/var/lib/lxc/_roots/core"
     mkdir $lower
+
+    cat <<EOF >> $path/mount-$name.sh
+#!/bin/bash
+#archivemount $path/rootfs.tar.gz $lower
+mount -t overlay -o lowerdir=$lower/,workdir=$path/work/,upperdir=$path/upper/ overlayfs $path/rootfs
+EOF
+    chmod u+x $path/mount-$name.sh
+    $path/mount-$name.sh
+
+    cat <<EOF >> $path/umount-$name.sh
+#!/bin/bash
+#umount $lower
+umount $path/rootfs
+EOF
+
+    chmod u+x $path/umount-$name.sh
+
+    cat <<EOF >> $path/config
+lxc.hook.pre-mount = $path/mount-$name.sh
+lxc-hook.post-stop =  $path/umount-$name.sh
+EOF
+
 }
 
 install_aethos_cp()
@@ -139,22 +193,20 @@ install_aethos_cp()
 install_aethos()
 {
     install_common $1 $2
-}
 
-install_buildbox()
-{
-    install_common $1 $2
+    return $?
 }
 
 install_buildroot()
 {
     install_common $1 $2
 
-
     cat <<EOF >> $path/config
 # Uncomment this next line to mount ABD
 lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
 EOF
+
+    return $?
 
 }
 
@@ -519,6 +571,21 @@ if [ -z "$rootfs" ]; then
         rootfs=$path/rootfs
     fi
 fi
+
+install_buildbox()
+{
+    echo "Calling install_common"
+    install_common $1 $2
+
+    mkdir $path/upper/root
+
+    cat <<EOF >> $path/config
+# Uncomment this next line to mount ABD
+lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
+EOF
+
+    return $?
+}
 
 install_$aethos_type $rootfs $name
 if [ $? -ne 0 ]; then
