@@ -28,58 +28,18 @@ sudo lxc-attach -n build -- /root/abd/abd build
 
 The commands are equivalent and you don't have to worry about remaining in a root shell all the time, which can be dangerous.
 
-## Build AethOS
+## Installation
 
-These steps will walk you through building an AethOS LiveCD / distribution CD / sdcard using custom BuildRoot scripts.
-
-Assuming you have an Ubuntu installation, the following instructions will help you create your own AethOS distribution CD's and sdcard images.
-
-### Create the build container
-
-Since we use LXC containers within AethOS anyway, it only makes sense to create a container for our build "machine".  This will allow us to install a whole lot of software required for building, then discard it all without messing with our main machine.
+Prerequisites are Ubuntu, LXC and unionfs and the contents of this repository.
 
 ```bash
 root@ubuntu:~#
-apt install lxc unionfs-fuse
+apt install git lxc unionfs-fuse
 ```
 
-As a precursor, if you haven't already done so, you should (highly recommended, but not required) create a special partition for your containers formatted using btrfs and mount it at `/var/lib/lxc/`.
+As a precursor, if you haven't already done so, you should (highly recommended, but not required) create a partition for your containers and mount it at `/var/lib/lxc/`.
 
-Create the partition; here I'm creating it on `/dev/sdb`, which is another drive altogether.  Hopefully you have a spare partition somewhere, or maybe, like me, you're actually running Ubuntu on a virtual machine, which will make it easier for you to add a new virtual hard drive.
-
-```bash
-root@ubuntu:~#
-cfdisk /dev/sdb
-```
-
-```bash
-root@ubuntu:~#
-mkfs.btrfs /dev/sdb1
-mount /dev/sdb1 /var/lib/lxc
-```
-
-We'll create a container with Ubuntu Bionic Beaver 64 bit OS installed. The `-n build` names the container "build"; it's important that you use this container name because other scripts will use this (specifically the lxc-aethos LXC template)
-
-```bash
-root@ubuntu:~#
-lxc-create -B btrfs -t download -n build -- -d ubuntu -r bionic -a amd64
-```
-
-You might also have to add `--keyserver hkp://p80.pool.sks-keyservers.net:80` if the keyserver is blocked by your firewall.
-
-Alternatively, if you're doing this on an NVidia TK1, use this command for the appropriate architecture.
-
-```bash
-root@ubuntu:~#
-lxc-create -B btrfs -t download -n build -- -d ubuntu -r bionic -a armhf
-```
-
-You can verify that the brtfs file system was used.
-
-```bash
-root@ubuntu:~#
-btrfs sub list /var/lib/lxc/
-```
+You might want to add the `aethos-build-dist` to your path so that you can execute the included shell scripts; if not then you'll have to modify these instructions to include that path for `apm`, `abd`, and `config_aethos_lxc.sh`.
 
 Somewhere, whether it's in your home/dev folder (which is what I do), or somewhere in your root folder, check out this repository using git.
 
@@ -97,16 +57,26 @@ git clone https://github.com/aethosio/aethos-build-dist.git
 
 Create the environment variable where you checked out the project.
 
-```
+```bash
 root@ubuntu:~#
 export ABD_ROOT=/home/trichards/dev/aethos-build-dist
 ```
 
-Mount it inside the `build` container you just created.
+Next, copy or set up a symbolic link for `lxc-aethos` (see `config_aethos_lxc.sh`).
+
+## Build AethOS
+
+These steps will walk you through building an AethOS LiveCD / distribution CD / sdcard using custom BuildRoot scripts.
+
+Assuming you have an Ubuntu installation, the following instructions will help you create your own AethOS distribution CD's and sdcard images.
+
+### Create the buildroot container
+
+Since we use LXC containers within AethOS anyway, it only makes sense to create a container for our build "machine".  This will allow us to install a whole lot of software required for building, then discard it all without messing with our main machine.
 
 ```bash
-root@ubuntu:~#
-echo "lxc.mount.entry=$ABD_ROOT root/abd none bind,create=dir" >> /var/lib/lxc/build/config
+trichards@ubuntu:~#
+apm create buildroot
 ```
 
 This gives you an example of how you can use your main machine to develop software and use that software inside a container without having to install all of the software necessary for building the software inside of your main machine.  This separation allows you to use software on your main machine that's not compatible with your target machine.
@@ -115,31 +85,15 @@ Start the container and attach to it (or, at least start it and you can control 
 
 ```bash
 root@ubuntu:~#
-lxc-start -n build
-lxc-attach -n build
+lxc-start -n buildroot
+lxc-attach -n buildroot
 ```
 
-Update your build container with software required for the rest of this install.
+On non-ARM host platforms, install grub.
 
 ```bash
-root@build:~#
-apt update
-apt upgrade
-apt install make gcc libncurses5-dev libelf-dev bc busybox mkisofs
-```
-
-Additional packages:
-
-```
-root@build:~#
-apt install sed binutils build-essential g++ bash patch gzip bzip2 perl tar cpio python unzip rsync wget cvs git mercurial rsync subversion gcc-multilib
-```
-
-On non-ARM host platforms, also install grub.
-
-```bash
-root@build:~#
-apt install grub
+root@buildroot:~#
+apt install grub2-common
 ```
 
 ### Building AethOS
@@ -149,7 +103,7 @@ Now that you've attached to your build container and you've mapped `abd` (AethOS
 First, add `abd` to your path.
 
 ```bash
-root@build:/#
+root@buildroot:/#
 cd /root
 export PATH=$PATH:/root/abd
 abd -h
@@ -210,21 +164,21 @@ The first time you run this it will download `Buildroot` using git, and then it 
 If you wanted to create a boot image for your Raspberry Pi or NVidia TK1 (**note that this has not been fully implemented yet**) you would use one of these commands:
 
 ```bash
-root@build:~#
+root@buildroot:~#
 abd build --rpi
 ```
 
 or
 
 ```bash
-root@build:~#
+root@buildroot:~#
 abd build --tk1
 ```
 
 If you wanted to change the configuration for the Raspberry Pi Linux kernel, you would do something like this:
 
 ```bash
-root@build:~#
+root@buildroot:~#
 abd kconfig --rpi
 ```
 
@@ -286,7 +240,7 @@ This disadvantage of this method is that you must shut down all running containe
 ```bash
 root@ubuntu:~#
 mkdir -p /var/lib/lxc/aethos/rootfs
-cp /var/lib/lxc/build/rootfs/root/buildroot-x86_64-full-build/images/rootfs.ext2 /var/lib/lxc/aethos
+cp /var/lib/lxc/buildroot/rootfs/root/buildroot-x86_64-full-build/images/rootfs.ext2 /var/lib/lxc/aethos
 mount /var/lib/lxc/aethos/rootfs.ext2 /var/lib/lxc/aethos/rootfs
 ```
 
@@ -306,23 +260,23 @@ Once you have AethOS running in some containers, you'll probably want to build a
 To make an ISO is as simple as doing an `abd build --min` for whatever architecture you're targeting, assuming you've already done a `full` build.
 
 ```bash
-root@build:~#
+root@buildroot:~#
 abd build --min
 ```
 
-This will create an ISO image on your container, but you can access it from your host machine at `/var/lib/lxc/build/rootfs/root/buildroot-x86_64-min-build/images/rootfs.iso9660`.
+This will create an ISO image on your container, but you can access it from your host machine at `/var/lib/lxc/buildroot/rootfs/root/buildroot-x86_64-min-build/images/rootfs.iso9660`.
 
 For me, since my host Linux machine is actually running as a Parallels VM, I can copy the ISO to my Mac.
 
 ```bash
-cp /var/lib/lxc/boot/rootfs/root/buildroot-x86_64-min-build/images/rootfs.iso9660 /media/psf/Home/Downloads/buildroot.iso
+cp /var/lib/lxc/buildroot/rootfs/root/buildroot-x86_64-min-build/images/rootfs.iso9660 /media/psf/Home/Downloads/buildroot.iso
 ```
 
 From there I can burn the image or I can just use it to create a new Parallels VM.
 
 ## Making a sdcard image
 
-When you do a `full` `rpi` build (or a `tk1` build), the sdcard image is already created.  You can access it from your host machine at `/var/lib/lxc/build/rootfs/root/buildroot-rpi-full-build/images/rootfs.ext2`.
+When you do a `full` `rpi` build (or a `tk1` build), the sdcard image is already created.  You can access it from your host machine at `/var/lib/lxc/buildroot/rootfs/root/buildroot-rpi-full-build/images/rootfs.ext2`.
 
 This is an EXT4 file system that is bootable, so you can use `dd` to copy that image to an sdcard, plug the card into your Raspberry Pi or your NVidia Jetson TK1 and boot it up into AethOS.
 

@@ -22,6 +22,9 @@ $1 command
   build       Builds one of the following packages
     aethos    (requires buildroot)
 
+  remount     unmount / mount all core container file systems
+  umount      unmount all core container file systems
+
 EOF
 }
 
@@ -60,10 +63,7 @@ createCore()
     echo "core file system has already been created."
   fi
 
-  if [ ! -d $roots/core/etc ]; then
-    sudo mount $roots/core.squash -t squashfs $roots/core
-  fi
-
+  doMountAll
 }
 
 createBuildBox()
@@ -89,12 +89,9 @@ createBuildBox()
 
     sudo mkdir $roots/buildbox
     sudo mkdir $roots/buildbox.upper
-    sudo mount $roots/buildbox.squash $roots/buildbox.upper
-
-    sudo unionfs-fuse $roots/buildbox.upper:$roots/core $roots/buildbox
-
   fi
 
+  doMountAll
 }
 
 createBuildRoot()
@@ -106,6 +103,8 @@ createBuildRoot()
   else
     sudo lxc-create -t aethos -n buildroot -- -t buildroot
   fi
+
+  doMountAll
 
 }
 
@@ -144,7 +143,36 @@ doCreate()
   esac
 }
 
+doUmountAll()
+{
+  # Remeber this should be reverse order of doMountAll
+  sudo umount $roots/buildbox.upper
+  sudo umount $roots/buildbox
+  sudo umount $roots/core
+}
+
+doMountAll()
+{
+  if [ ! -d $roots/core/etc ]; then
+    sudo mount $roots/core.squash -t squashfs $roots/core
+  fi
+
+  sudo unionfs-fuse $roots/buildbox.upper:$roots/core $roots/buildbox
+
+  sudo mount $roots/buildbox.squash $roots/buildbox.upper
+
+}
+
+doRemountALl()
+{
+  doUmountAll
+  doMountAll
+}
+
 case ${cmd} in
   create)       doCreate $@; exit 0;;
+  umount)       doUmountAll; exit 0;;
+  mount)        doMountAll; exit 0;;
+  remount)      doRemountALl; exit 0;;
   *)            echo Bad command && usage $0 && exit 0;;
 esac

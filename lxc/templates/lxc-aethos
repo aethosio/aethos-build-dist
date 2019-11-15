@@ -202,8 +202,8 @@ install_buildroot()
     install_common $1 $2
 
     cat <<EOF >> $path/config
-# Uncomment this next line to mount ABD
-lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
+# Mount ABD
+lxc.mount.entry=$ABD_ROOT root/abd none bind,create=dir
 EOF
 
     return $?
