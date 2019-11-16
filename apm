@@ -19,6 +19,9 @@ $1 command
     node
       000     creates node000
 
+  destroy
+              Destroys buildbox
+
   build       Builds one of the following packages
     aethos    (requires buildroot)
 
@@ -47,9 +50,10 @@ createCore()
     echo "Ubuntu base distro is already installed."
   else
     echo "About to do this; needs sudo"
-    echo "sudo lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch --keyserver hkp://p80.pool.sks-keyservers.net:80"
+    echo "sudo -E lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch --keyserver hkp://p80.pool.sks-keyservers.net:80"
+    echo "Press a key to continue"
     read -n 1 -s
-    sudo lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch --keyserver hkp://p80.pool.sks-keyservers.net:80
+    sudo -E lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch --keyserver hkp://p80.pool.sks-keyservers.net:80
   fi
 
   if [ ! -d $roots ]; then
@@ -70,10 +74,12 @@ createBuildBox()
 {
   createCore
 
+  echo "Creating buildbox..."
+
   if [ -d "/var/lib/lxc/buildbox" ]; then
     echo "BuildBox base container is already installed."
   else
-    sudo lxc-create -t aethos -n buildbox -- -t buildbox
+    sudo -E lxc-create -t aethos -n buildbox -- -t buildbox
   fi
 
   if [ -f "$roots/buildbox.squash" ]; then
@@ -101,7 +107,23 @@ createBuildRoot()
   if [ -d "/var/lib/lxc/buildroot" ]; then
     echo "buildroot container is already installed."
   else
-    sudo lxc-create -t aethos -n buildroot -- -t buildroot
+    sudo -E lxc-create -t aethos -n buildroot -- -t buildroot
+  fi
+
+  doMountAll
+
+}
+
+createKafka()
+{
+  createCore
+
+  echo "Creating kafka..."
+
+  if [ -d "/var/lib/lxc/kafka" ]; then
+    echo "kafka container is already installed."
+  else
+    sudo -E lxc-create -t aethos -n kafka -- -t kafka
   fi
 
   doMountAll
@@ -131,6 +153,7 @@ createUsage()
   echo "    apm create core"
   echo "    apm create buildbox"
   echo "    apm create buildroot"
+  echo "    apm create kafka"
 }
 
 doCreate()
@@ -139,6 +162,7 @@ doCreate()
     core)       createCore;;
     buildbox)   createBuildBox;;
     buildroot)  createBuildRoot;;
+    kafka)      createKafka;;
     *)          createUsage; exit 1;;
   esac
 }
@@ -169,8 +193,20 @@ doRemountALl()
   doMountAll
 }
 
+doDestroy()
+{
+  # For now destroys buildbox
+  doUmountAll
+
+  sudo rm -rf $roots/buildbox
+  sudo rm -rf $roots/buildbox.upper
+  sudo rm $roots/buildbox.squash
+  sudo lxc-destroy buildbox
+}
+
 case ${cmd} in
   create)       doCreate $@; exit 0;;
+  destroy)      doDestroy; exit 0;;
   umount)       doUmountAll; exit 0;;
   mount)        doMountAll; exit 0;;
   remount)      doRemountALl; exit 0;;

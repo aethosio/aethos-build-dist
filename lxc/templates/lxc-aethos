@@ -178,6 +178,40 @@ EOF
 
 }
 
+install_kafka_overlay()
+{
+    rootfs=$1
+    name=$2
+    res=0
+
+    # Create the file systems
+    mkdir $path/upper
+    mkdir $path/work
+    mkdir $rootfs
+
+    lower="/var/lib/lxc/_roots/core"
+
+    cat <<EOF >> $path/mount-$name.sh
+#!/bin/bash
+mount -t overlay -o lowerdir=$lower/,workdir=$path/work/,upperdir=$path/upper/ overlayfs $path/rootfs
+EOF
+    chmod u+x $path/mount-$name.sh
+    $path/mount-$name.sh
+
+    cat <<EOF >> $path/umount-$name.sh
+#!/bin/bash
+umount $path/rootfs
+EOF
+
+    chmod u+x $path/umount-$name.sh
+
+    cat <<EOF >> $path/config
+lxc.hook.pre-mount = $path/mount-$name.sh
+lxc-hook.post-stop =  $path/umount-$name.sh
+EOF
+
+}
+
 install_aethos_cp()
 {
     rootfs=$1
@@ -534,6 +568,8 @@ eval set -- "$options"
 # buildbox - ubuntu + build tools
 # devbox - buildbox + dev tools
 # buildroot - buildbox + buildroot
+# (TODO Split java into it's own layer if other things need it)
+# kafka - ubuntu + java and kafka 
 aethos_type="aethos"
 
 while true
@@ -580,8 +616,23 @@ install_buildbox()
     mkdir $path/upper/root
 
     cat <<EOF >> $path/config
-# Uncomment this next line to mount ABD
-lxc.mount.entry=/home/trichards/dev/aethos-build-dist root/abd none bind,create=dir
+# Mount ABD
+lxc.mount.entry=$ABD_ROOT root/abd none bind,create=dir
+EOF
+
+    return $?
+}
+
+install_kafka()
+{
+    echo "Calling install_common"
+    install_common $1 $2
+
+    mkdir $path/upper/root
+
+    cat <<EOF >> $path/config
+# Mount ABD
+lxc.mount.entry=$ABD_ROOT root/abd none bind,create=dir
 EOF
 
     return $?
