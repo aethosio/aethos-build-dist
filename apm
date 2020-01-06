@@ -124,6 +124,35 @@ createKafka()
     echo "kafka container is already installed."
   else
     sudo -E lxc-create -t aethos -n kafka -- -t kafka
+    sudo lxc-start -n kafka
+    sleep 10
+    sudo lxc-attach -n kafka -- /root/abd/install_kafka.sh
+    sleep 10
+    sudo lxc-stop -n kafka
+    sleep 10
+  fi
+
+  doMountAll
+
+}
+
+
+createFXA()
+{
+  createCore
+
+  echo "Creating fxa..."
+
+  if [ -d "/var/lib/lxc/fxa" ]; then
+    echo "fxa container is already installed."
+  else
+    sudo -E lxc-create -t aethos -n fxa -- -t fxa
+    # sudo lxc-start -n fxa
+    # sleep 10
+    # sudo lxc-attach -n fxa -- /root/abd/install_fxa.sh
+    # sleep 10
+    # sudo lxc-stop -n fxa
+    # sleep 10
   fi
 
   doMountAll
@@ -153,7 +182,8 @@ createUsage()
   echo "    apm create core"
   echo "    apm create buildbox"
   echo "    apm create buildroot"
-  echo "    apm create kafka"
+  echo "    apm create kafka (experimental)"
+  echo "    apm create fxa (broken)"
 }
 
 doCreate()
@@ -163,6 +193,7 @@ doCreate()
     buildbox)   createBuildBox;;
     buildroot)  createBuildRoot;;
     kafka)      createKafka;;
+    fxa)        createFXA;;
     *)          createUsage; exit 1;;
   esac
 }
@@ -187,7 +218,7 @@ doMountAll()
 
 }
 
-doRemountALl()
+doRemountAll()
 {
   doUmountAll
   doMountAll
@@ -204,11 +235,20 @@ doDestroy()
   sudo lxc-destroy buildbox
 }
 
+# TODO 
+# These are all merged; it should be build, create, publish, fetch, install
+# How does upgrade work?
+#
+# build - build container and build the image
+# create - create the package, getting built files as necessary from the build container
+# publish - publish the package
+# fetch - fetch the published package
+# install - install the fetched package
 case ${cmd} in
   create)       doCreate $@; exit 0;;
   destroy)      doDestroy; exit 0;;
   umount)       doUmountAll; exit 0;;
   mount)        doMountAll; exit 0;;
-  remount)      doRemountALl; exit 0;;
+  remount)      doRemountAll; exit 0;;
   *)            echo Bad command && usage $0 && exit 0;;
 esac
