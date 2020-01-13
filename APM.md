@@ -4,7 +4,8 @@ Primarily used with `AethOS Build Dist`, the `AethOS Package Manager` is used fo
 
 ## Installation
 
-After cloning to your build machine
+After cloning to your build machine...
 
 ## Usage
 
+TODO: Complete

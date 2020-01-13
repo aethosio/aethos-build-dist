@@ -25,9 +25,6 @@ $1 command
   build       Builds one of the following packages
     aethos    (requires buildroot)
 
-  remount     unmount / mount all core container file systems
-  umount      unmount all core container file systems
-
 EOF
 }
 
@@ -46,28 +43,25 @@ createCore()
     exit 1
   fi
 
-  if [ -d "/var/lib/lxc/ubuntu" ]; then
-    echo "Ubuntu base distro is already installed."
+  if [ -d "/var/lib/lxc/core" ]; then
+    echo "Ubuntu core distro is already installed."
   else
     echo "About to do this; needs sudo"
     echo "sudo -E lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch --keyserver hkp://p80.pool.sks-keyservers.net:80"
     echo "Press a key to continue"
     read -n 1 -s
-    sudo -E lxc-create -t download -n ubuntu -- --dist ubuntu --release bionic --arch $arch --keyserver hkp://p80.pool.sks-keyservers.net:80
+    sudo -E lxc-create -t download -n core -- --dist ubuntu --release bionic --arch $arch --keyserver hkp://p80.pool.sks-keyservers.net:80
   fi
 
   if [ ! -d $roots ]; then
     sudo mkdir $roots
-    sudo mkdir $roots/core
   fi
 
   if [ ! -f "$roots/core.squash" ]; then
-    sudo mksquashfs "/var/lib/lxc/ubuntu/rootfs" "$roots/core.squash"
+    sudo mksquashfs "/var/lib/lxc/core/rootfs" "$roots/core.squash"
   else
     echo "core file system has already been created."
   fi
-
-  doMountAll
 }
 
 createBuildBox()
@@ -92,12 +86,7 @@ createBuildBox()
     sudo lxc-stop -n buildbox
     sleep 10
     sudo mksquashfs "/var/lib/lxc/buildbox/upper" "$roots/buildbox.squash"
-
-    sudo mkdir $roots/buildbox
-    sudo mkdir $roots/buildbox.upper
   fi
-
-  doMountAll
 }
 
 createBuildRoot()
@@ -109,9 +98,6 @@ createBuildRoot()
   else
     sudo -E lxc-create -t aethos -n buildroot -- -t buildroot
   fi
-
-  doMountAll
-
 }
 
 createKafka()
@@ -131,9 +117,6 @@ createKafka()
     sudo lxc-stop -n kafka
     sleep 10
   fi
-
-  doMountAll
-
 }
 
 
@@ -154,9 +137,6 @@ createFXA()
     # sudo lxc-stop -n fxa
     # sleep 10
   fi
-
-  doMountAll
-
 }
 
 # Verify the command was set.
@@ -198,39 +178,10 @@ doCreate()
   esac
 }
 
-doUmountAll()
-{
-  # Remeber this should be reverse order of doMountAll
-  sudo umount $roots/buildbox.upper
-  sudo umount $roots/buildbox
-  sudo umount $roots/core
-}
-
-doMountAll()
-{
-  if [ ! -d $roots/core/etc ]; then
-    sudo mount $roots/core.squash -t squashfs $roots/core
-  fi
-
-  sudo unionfs-fuse $roots/buildbox.upper:$roots/core $roots/buildbox
-
-  sudo mount $roots/buildbox.squash $roots/buildbox.upper
-
-}
-
-doRemountAll()
-{
-  doUmountAll
-  doMountAll
-}
-
 doDestroy()
 {
   # For now destroys buildbox
-  doUmountAll
 
-  sudo rm -rf $roots/buildbox
-  sudo rm -rf $roots/buildbox.upper
   sudo rm $roots/buildbox.squash
   sudo lxc-destroy buildbox
 }
@@ -247,8 +198,5 @@ doDestroy()
 case ${cmd} in
   create)       doCreate $@; exit 0;;
   destroy)      doDestroy; exit 0;;
-  umount)       doUmountAll; exit 0;;
-  mount)        doMountAll; exit 0;;
-  remount)      doRemountAll; exit 0;;
   *)            echo Bad command && usage $0 && exit 0;;
 esac

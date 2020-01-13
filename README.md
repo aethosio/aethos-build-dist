@@ -83,8 +83,11 @@ This gives you an example of how you can use your main machine to develop softwa
 
 Start the container and attach to it (or, at least start it and you can control it using `lxc-attach -n build -- <command>`).
 
+***Note: You must be root and you must manually mount and unmount the file systems.  Until a workaround is found, this is true of all APM LXC containers that use unionfs-fuse.***
+
 ```bash
 root@ubuntu:~#
+/var/lib/lxc/buildroot/mount-buildroot.sh
 lxc-start -n buildroot
 lxc-attach -n buildroot
 ```
